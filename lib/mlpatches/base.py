@@ -28,6 +28,11 @@ class IncompatiblePatch(Exception):
     """raised when a patch is incompatible."""
 
     pass
+    
+    
+class AttributeUndefined:
+    """Special Type to mark if patched attribute was not defined and should be deletted"""
+    pass
 
 
 class BasePatch(object):
@@ -123,13 +128,20 @@ class FunctionPatch(BasePatch):
             # If the module is already loaded, get it from sys.modules
             module = sys.modules[self.module]
 
-        self.old = getattr(module, self.function)
+        try:
+            self.old = getattr(module, self.function)
+        except AttributeError:
+            # handle undefined attribute
+            self.old = AttributeUndefined
         setattr(module, self.function, self.replacement)
 
     def do_disable(self):
         module = sys.modules[self.module]
         if self.old is not None:
             setattr(module, self.function, self.old)
+        # delete undefined attribute
+        if self.old is AttributeUndefined:
+            delattr(module, self.function)
 
 
 class ModulePatch(BasePatch):
