@@ -46,8 +46,8 @@ if (paramiko is None) or (Version(paramiko.__version__) < Version("1.15")):
     _stash("pip install paramiko==1.16.0")
     print("Please restart Pythonista for changes to take full effect")
     sys.exit(0)
-    
-    
+  
+
 # monkeypatch for paramiko and Crypto.Random
 # global mlpatches.time_patches.CLOCK_PATCH can be disabled
 import time
