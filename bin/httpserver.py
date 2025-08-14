@@ -12,8 +12,9 @@ import os
 import posixpath
 import re
 import shutil
-from http.server import HTTPServer, BaseHTTPRequestHandler
+
 from io import BytesIO
+from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import quote, unquote
 
 __version__ = "0.1"
@@ -206,20 +207,18 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         ctype = ctype or "application/octet-stream"
 
         try:
-            # Always read in binary mode. Opening files in text mode may cause
-            # newline translations, making the actual size of the content
-            # transmitted *less* than the content-length!
-            with open(path, 'rb') as f:
-                self.send_response(200)
-                self.send_header("Content-type", ctype)
-                fs = os.fstat(f.fileno())
-                self.send_header("Content-Length", str(fs[6]))
-                self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
-                self.end_headers()
-                return f
+            f = open(path, 'rb')
         except IOError:
             self.send_error(404, "File not found")
             return None
+
+        self.send_response(200)
+        self.send_header("Content-type", ctype)
+        fs = os.fstat(f.fileno())
+        self.send_header("Content-Length", str(fs[6]))
+        self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
+        self.end_headers()
+        return f
 
     def list_directory(self, path):
         """Helper to produce a directory listing (absent index.html).
@@ -311,7 +310,9 @@ def main(port=8000):
         print("Serving HTTP on 0.0.0.0 port %d ..." % port)
         # Note: The following line is specific to the "StaSh" environment and may need to be adjusted
         # if you are running this script in a different terminal.
-        print("local IP address is %s" % globals()["_stash"].libcore.get_lan_ip())
+        _stash = globals().get("_stash", None)
+        if _stash:
+            print("local IP address is %s" % globals()["_stash"].libcore.get_lan_ip())
         server.serve_forever()
 
     except KeyboardInterrupt:
