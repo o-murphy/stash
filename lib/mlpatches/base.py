@@ -28,8 +28,8 @@ class IncompatiblePatch(Exception):
     """raised when a patch is incompatible."""
 
     pass
-    
-    
+
+
 class AttributeUndefined:
     """
     Special Type to mark if patched attribute
