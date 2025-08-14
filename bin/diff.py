@@ -15,6 +15,8 @@ try:
 except ImportError:
     console = None
 
+_stash = globals().get('_stash')
+
 # Define ANSI color codes
 ANSI_GREEN = "\x1b[92m"  # For added lines (+)
 ANSI_RED = "\x1b[91m"    # For removed lines (-)
@@ -45,7 +47,7 @@ def modified(f):
 
 
 def print_line(line):
-    if _stash := globals().get('_stash'):
+    if _stash:
         if line.startswith("+"):
             line = _stash.text_color(
                 line, "green"
@@ -106,7 +108,7 @@ def diff(lhs: Path, rhs: Path):
 
 def main(args):
     if _stash:
-        sys.stdout.write("\x1b[H\x1b[2J")
+        _stash('clear')
     elif console:
         console.clear()
     else:
