@@ -90,12 +90,13 @@ def diff(lhs: Path, rhs: Path):
         else:
             # Use ANSI escape codes if 'console' is not available
             if line.startswith("+"):
-                sys.stdout.write(f"{ANSI_GREEN}{line}{ANSI_RESET}")
+                sys.stdout.write(f"{ANSI_GREEN}")
             elif line.startswith("-"):
-                sys.stdout.write(f"{ANSI_RED}{line}{ANSI_RESET}")
+                sys.stdout.write(f"{ANSI_RED}")
             else:
                 # Print other lines (context, headers) without color
-                sys.stdout.write(line)
+                sys.stdout.write(f"{ANSI_RESET}")
+            sys.stdout.write(line)
     return
 
 
