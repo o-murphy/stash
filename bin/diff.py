@@ -5,7 +5,6 @@ import os
 import json
 import argparse
 from pathlib import Path
-
 import pytz
 
 from datetime import datetime
@@ -16,14 +15,12 @@ try:
 except ImportError:
     console = None
 
-
 # Define ANSI color codes
-ANSI_GREEN = "\033[92m"  # For added lines (+)
-ANSI_RED = "\033[91m"    # For removed lines (-)
-ANSI_RESET = "\033[0m"   # To reset the color
+ANSI_GREEN = "\x1b[92m"  # For added lines (+)
+ANSI_RED = "\x1b[91m"    # For removed lines (-)
+ANSI_RESET = "\x1b[0m"   # To reset the color
 
 
-# _____________________________________________________
 def argue(args):
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", action="store_true")
@@ -35,24 +32,48 @@ def argue(args):
     return args
 
 
-# _____________________________________________________
 def sn(x):
     return "%s\n" % x
 
 
-# _____________________________________________________
 def modified(f):
-    lmt = os.path.getmtime(f)
-    est = pytz.timezone("Australia/Sydney")
-    gmt = pytz.timezone("GMT")
-    tzf = "%Y-%m-%d %H:%M:%S"
-    gdt = datetime.utcfromtimestamp(lmt)
-    gdt = gmt.localize(gdt)
-    adt = est.normalize(gdt.astimezone(est))
-    return adt.strftime(tzf)
+    timestamp = os.path.getmtime(f)
+    utc_dt = datetime.fromtimestamp(timestamp, tz=pytz.utc)
+    sydney_tz = pytz.timezone("Australia/Sydney")
+    sydney_dt = utc_dt.astimezone(sydney_tz)
+    return sydney_dt.strftime("%Y-%m-%d %H:%M:%S")
 
 
-# _____________________________________________________
+def print_line(line):
+    if _stash := globals().get('_stash'):
+        if line.startswith("+"):
+            line = _stash.text_color(
+                line, "green"
+            )
+        elif line.startswith("-"):
+            line = _stash.text_color(
+                line, "red"
+            )
+    elif console:
+        # Use the 'console' module if available
+        if line.startswith("+"):
+            console.set_color(0, 1, 0)
+        elif line.startswith("-"):
+            console.set_color(0, 0, 1)
+        else:
+            console.set_color(1, 1, 1)
+    else:
+        # Use ANSI escape codes if 'console' is not available
+        if line.startswith("+"):
+            line = ANSI_GREEN + line
+        elif line.startswith("-"):
+            line = ANSI_RED + line
+        else:
+            line = ANSI_RESET + line
+
+    sys.stdout.write(line)
+
+
 def diff(lhs: Path, rhs: Path):
     if not lhs.is_file():
         sys.stderr.write("%s not a file\n" % lhs)
@@ -78,34 +99,18 @@ def diff(lhs: Path, rhs: Path):
         tofiledate=modified(rhs),
     )
     for line in diffs:
-        if console:
-            # Use the 'console' module if available
-            if line.startswith("+"):
-                console.set_color(0, 1, 0)
-            elif line.startswith("-"):
-                console.set_color(0, 0, 1)
-            else:
-                console.set_color(1, 1, 1)
-            sys.stdout.write(line)
-        else:
-            # Use ANSI escape codes if 'console' is not available
-            if line.startswith("+"):
-                sys.stdout.write(f"{ANSI_GREEN}")
-            elif line.startswith("-"):
-                sys.stdout.write(f"{ANSI_RED}")
-            else:
-                # Print other lines (context, headers) without color
-                sys.stdout.write(f"{ANSI_RESET}")
-            sys.stdout.write(line)
+        print_line(line)
+
     return
 
 
-# _____________________________________________________
 def main(args):
-    if console:
+    if _stash:
+        sys.stdout.write("\x1b[H\x1b[2J")
+    elif console:
         console.clear()
     else:
-        sys.stdout.write("\033[H\033[2J")
+        sys.stdout.write("\x1b[H\x1b[2J")
     args = argue(args)
     try:
         diff(args.lhs, args.rhs)
@@ -118,6 +123,5 @@ def main(args):
     return
 
 
-# _____________________________________________________
 if __name__ == "__main__":
     main(sys.argv[1:])
