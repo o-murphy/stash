@@ -36,20 +36,20 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
     server_version = "SimpleHTTPWithUpload/" + __version__
 
-    def do_get(self):
+    def do_GET(self):
         """Serve a GET request."""
         f = self.send_head()
         if f:
             self.copy_file(f, self.wfile)
             f.close()
 
-    def do_head(self):
+    def do_HEAD(self):
         """Serve a HEAD request."""
         f = self.send_head()
         if f:
             f.close()
 
-    def do_post(self):
+    def do_POST(self):
         """Serve a POST request."""
         r, info = self.deal_post_data()
         print(r, info, "by: ", self.client_address)
