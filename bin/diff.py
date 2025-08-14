@@ -4,20 +4,32 @@ import sys
 import os
 import json
 import argparse
+from pathlib import Path
+
 import pytz
-import console
 
 from datetime import datetime
 from difflib import unified_diff
 
+try:
+    import console
+except ImportError:
+    console = None
+
+
+# Define ANSI color codes
+ANSI_GREEN = "\033[92m"  # For added lines (+)
+ANSI_RED = "\033[91m"    # For removed lines (-)
+ANSI_RESET = "\033[0m"   # To reset the color
+
 
 # _____________________________________________________
-def argue():
+def argue(args):
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", action="store_true")
-    parser.add_argument("lhs")
-    parser.add_argument("rhs")
-    args = parser.parse_args()
+    parser.add_argument("lhs", type=Path)
+    parser.add_argument("rhs", type=Path)
+    args = parser.parse_args(args)
     if args.verbose:
         json.dump(vars(args), sys.stderr, indent=4)
     return args
@@ -41,45 +53,70 @@ def modified(f):
 
 
 # _____________________________________________________
-def diff(lhs, rhs):
-    if not os.path.isfile(lhs):
+def diff(lhs: Path, rhs: Path):
+    if not lhs.is_file():
         sys.stderr.write("%s not a file\n" % lhs)
         sys.exit(1)
-    if os.path.isdir(rhs):
+    if rhs.is_dir():
         rhs = "%s/%s" % (rhs, os.path.basename(lhs))
-    if not os.path.isfile(rhs):
+    if not rhs.is_file():
         sys.stderr.write("%s not a file\n" % rhs)
         sys.exit(1)
 
-    flhs = open(lhs).readlines()
-    frhs = open(rhs).readlines()
+    with open(lhs, "r", encoding="utf-8") as fp:
+        flhs = fp.readlines()
+
+    with open(rhs, "r", encoding="utf-8") as fp:
+        frhs = fp.readlines()
 
     diffs = unified_diff(
         flhs,
         frhs,
-        fromfile=lhs,
-        tofile=rhs,
+        fromfile=lhs.as_posix(),
+        tofile=rhs.as_posix(),
         fromfiledate=modified(lhs),
         tofiledate=modified(rhs),
     )
     for line in diffs:
-        if line.startswith("+"):
-            console.set_color(0, 1, 0)
-        if line.startswith("-"):
-            console.set_color(0, 0, 1)
+        if console:
+            # Use the 'console' module if available
+            if line.startswith("+"):
+                console.set_color(0, 1, 0)
+            elif line.startswith("-"):
+                console.set_color(0, 0, 1)
+            else:
+                console.set_color(1, 1, 1)
             sys.stdout.write(line)
-        console.set_color(1, 1, 1)
+        else:
+            # Use ANSI escape codes if 'console' is not available
+            if line.startswith("+"):
+                sys.stdout.write(f"{ANSI_GREEN}{line}{ANSI_RESET}")
+            elif line.startswith("-"):
+                sys.stdout.write(f"{ANSI_RED}{line}{ANSI_RESET}")
+            else:
+                # Print other lines (context, headers) without color
+                sys.stdout.write(line)
     return
 
 
 # _____________________________________________________
-def main():
-    console.clear()
-    args = argue()
-    diff(args.lhs.rstrip("/"), args.rhs.rstrip("/"))
+def main(args):
+    if console:
+        console.clear()
+    else:
+        sys.stdout.write("\033[H\033[2J")
+    args = argue(args)
+    try:
+        diff(args.lhs, args.rhs)
+    except FileNotFoundError:
+        sys.stderr.write("%s not found\n" % args.lhs)
+    except KeyboardInterrupt:
+        sys.stderr.write("Interrupted by user\n")
+    except Exception as e:
+        sys.stderr.write(f"diff: error: {e}\n")
     return
 
 
 # _____________________________________________________
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])
