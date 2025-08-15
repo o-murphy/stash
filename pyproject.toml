@@ -29,6 +29,7 @@ dependencies = [
   "pyaes-whl>=1.6.1",
   "pycryptodome>=3.23; platform_system!='iOS'",
   "pyftpdlib>=2.0.1",
+  "pygithub>=2.7",
   "pyperclip>=1.9; platform_system!='iOS'",
   "pyte>=0.8.2",
   "pytz>=2025.2; platform_system!='iOS'",
