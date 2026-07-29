@@ -1,12 +1,10 @@
-# -*- coding: utf-8 -*-
-from __future__ import print_function
-
 import argparse
 import os
 import stat
 
 from dulwich import porcelain
 from dulwich.diff_tree import _NULL_ENTRY, TreeEntry, _is_tree, _tree_entries
+
 from git import diff3, git_reset
 from git.gitutils import (
     GitError,
@@ -40,7 +38,7 @@ def _merge_entries(path, trees):
         lens.append(len(e))
 
     result = []
-    while any([ind < len_ for ind, len_ in zip(inds, lens)]):
+    while any(ind < len_ for ind, len_ in zip(inds, lens)):
         next_entry = [
             e[ind] if ind < len_ else _NULL_ENTRY
             for e, ind, len_ in zip(entries, inds, lens)
@@ -57,7 +55,7 @@ def _merge_entries(path, trees):
 
 
 def all_eq(entries):
-    all([i == j for i in entries for j in entries])
+    return all(i == j for i in entries for j in entries)
 
 
 def first_nonempty(entries):
@@ -109,7 +107,7 @@ def merge_trees(store, base, mine, theirs):
     added = []
     removed = []
     w = walk_trees(store, [base, mine, theirs], True)
-    count = 0
+    _count = 0
     for b, m, t in w:
         if _is_tree(b) or _is_tree(m) or _is_tree(t):
             # todo... handle mkdir, rmdir
@@ -138,7 +136,7 @@ def merge_trees(store, base, mine, theirs):
             with open(t.path, "w") as f:
                 f.write(store[t.sha].data)
             added.append(t.path)
-        elif not m == t:  # conflict
+        elif m != t:  # conflict
             print("  ?", m.path, ": merging conflicts")
             result = diff3.merge(
                 store[m.sha].data.splitlines(True),
@@ -148,14 +146,11 @@ def merge_trees(store, base, mine, theirs):
             mergedfile = result["body"]
             had_conflict = result["conflict"]
             with open(m.path, "w") as f:
-                for line in mergedfile:
-                    f.write(line)
+                f.writelines(mergedfile)
             if had_conflict:
                 num_conflicts += 1
                 print(
-                    "    !!! {} had a conflict that could not be resolved.\n    conflict markers added to file in working tree.\n    you need to resolve manually ".format(
-                        m.path
-                    )
+                    f"    !!! {m.path} had a conflict that could not be resolved.\n    conflict markers added to file in working tree.\n    you need to resolve manually "
                 )
             added.append(m.path)
     return num_conflicts, added, removed
@@ -227,7 +222,7 @@ def merge(args):
     base_sha = merge_base(repo, head, merge_head)[0]  # fixme, what if multiple bases
 
     if base_sha == head:
-        print("Fast forwarding {} to {}".format(repo.active_branch, merge_head))
+        print(f"Fast forwarding {repo.active_branch} to {merge_head}")
         repo.refs["HEAD"] = merge_head
         return
     if base_sha == merge_head:
@@ -235,12 +230,7 @@ def merge(args):
         return
 
     print(
-        "merging <{}> into <{}>\n{} commits ahead of merge base <{}> respectively".format(
-            merge_head[0:7],
-            head[0:7],
-            count_commits_between(repo, merge_head, head),
-            base_sha[0:7],
-        )
+        f"merging <{merge_head[0:7]}> into <{head[0:7]}>\n{count_commits_between(repo, merge_head, head)} commits ahead of merge base <{base_sha[0:7]}> respectively"
     )
     base_tree = repo[base_sha].tree
     merge_head_tree = repo[merge_head].tree
@@ -256,10 +246,8 @@ def merge(args):
         porcelain.rm(repo.path, removed)
 
     repo.repo._put_named_file("MERGE_HEAD", merge_head)
-    repo.repo._put_named_file(
-        "MERGE_MSG", "Merged from {}({})".format(merge_head, result.commit)
-    )
-    print("Merge complete with {} conflicted files".format(num_conflicts))
+    repo.repo._put_named_file("MERGE_MSG", f"Merged from {merge_head}({result.commit})")
+    print(f"Merge complete with {num_conflicts} conflicted files")
     print(
         """Merged files were added to the staging area, but have not yet been comitted.
     Review changes (e.g.   git diff   or   git diff>changes.txt; edit changes.txt    ), and
