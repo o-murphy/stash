@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """unmount a filesystem."""
 
-from __future__ import print_function
 import argparse
 import sys
 
-from stashutils import mount_manager, mount_ctrl
+from stashutils import mount_ctrl, mount_manager
 
 _stash = globals()["_stash"]
 
@@ -52,12 +51,12 @@ if __name__ == "__main__":
 
     for path in to_unmount:
         if ns.v:
-            print("Unmounting '{p}'...".format(p=path))
+            print(f"Unmounting '{path}'...")
         try:
             manager.unmount_fsi(path, force=ns.force)
         except mount_manager.MountError as e:
             exitcode = 1
-            print(_stash.text_color("Error: {e}".format(e=e.message), "red"))
+            print(_stash.text_color(f"Error: {e.message}", "red"))
     if ns.v:
         print("Done.")
     sys.exit(exitcode)

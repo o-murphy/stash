@@ -54,11 +54,11 @@ def main():
                                 )
                                 s = _stash.text_style(
                                     desc,
-                                    dict(
-                                        color=fg,
-                                        bgcolor=bg,
-                                        traits=traits,
-                                    ),
+                                    {
+                                        "color": fg,
+                                        "bgcolor": bg,
+                                        "traits": traits,
+                                    },
                                 )
                                 print(s)
     print("================= Done =====================")

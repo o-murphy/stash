@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """Search a regular expression pattern in one or more files"""
-
-from __future__ import print_function
 
 import argparse
 import collections
@@ -12,7 +10,7 @@ import sys
 
 
 def main(args):
-    global _stash
+    global _stash  # noqa: PLW0602
     ap = argparse.ArgumentParser()
     ap.add_argument("pattern", help="the pattern to match")
     ap.add_argument("files", nargs="*", help="files to be searched")
@@ -42,7 +40,7 @@ def main(args):
     fileinput.close()  # in case it is not closed
     try:
         counts = collections.defaultdict(int)
-        for line in fileinput.input(files, openhook=fileinput.hook_encoded("utf-8")):
+        for line in fileinput.input(files, encoding="utf-8"):
             if bool(pattern.search(line)) != ns.invert:
                 if ns.count:
                     counts[fileinput.filename()] += 1
@@ -72,7 +70,7 @@ def main(args):
                 print(fmt.format(filename=filename, count=count))
 
     except Exception as err:
-        print("grep: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
+        print(f"grep: {type(err).__name__}: {err!s}", file=sys.stderr)
     finally:
         fileinput.close()
 

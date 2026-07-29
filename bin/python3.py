@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """
 Simulates a console call to python3 [-m module][-c cmd] [file] [args]
 
@@ -13,14 +13,19 @@ usage:
     python3 python_file.py [args]
 """
 
-from __future__ import print_function
+import sys
 
 # check for py2/3
 _stash = globals()["_stash"]
-if not _stash.PY3:
+
+PY3 = True
+
+if not PY3:
     print(
         _stash.text_color(
-            "You are running StaSh in python 2.\nRunning python3 from python 2 is not (yet) supported.\nPlease use the 'python' command instead.",
+            "You are running StaSh in python 2.\n"
+            "Running python3 from python 2 is not (yet) supported.\n"
+            "Current StaSh version supports only python 3.10 or higher.",
             "red",
         )
     )
@@ -28,11 +33,11 @@ if not _stash.PY3:
 
     sys.exit(1)
 
+import argparse
+import builtins
+import code
 import runpy
 import sys
-import argparse
-import code
-import builtins
 
 args = sys.argv[1:]
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python2
-# -*- coding: utf-8 -*-
 """
 Usage:
     ping [-c <count>] [-i <interval>] [-W <timeout>] <destination>
@@ -80,17 +79,13 @@ Options:
     $Author: $
 """
 
-from __future__ import print_function
-
+import argparse
 import os
 import select
 import socket
 import struct
 import sys
 import time
-import argparse
-
-from six.moves import xrange
 
 # On Windows, the best timer is time.clock()
 # On most other platforms the best timer is time.time()
@@ -148,9 +143,11 @@ def receive_one_ping(my_socket, ID, timeout):
             return
 
         timeReceived = default_timer()
-        recPacket, addr = my_socket.recvfrom(1024)
+        recPacket, _addr = my_socket.recvfrom(1024)
         icmpHeader = recPacket[20:28]
-        type, code, checksum, packetID, sequence = struct.unpack(b"bbHHh", icmpHeader)
+        type, _code, _checksum, packetID, _sequence = struct.unpack(
+            b"bbHHh", icmpHeader
+        )
         # Filters out the echo request itself.
         # This can be tested by pinging 127.0.0.1
         # You'll see your own request
@@ -213,7 +210,7 @@ def verbose_ping(dest_addr, timeout=2, count=4, interval=1.0):
     the result.
     """
     ping_succeeded = False
-    for i in xrange(count):
+    for i in range(count):
         print("ping %s..." % dest_addr, end=" ")
         try:
             delay = do_one(dest_addr, timeout)

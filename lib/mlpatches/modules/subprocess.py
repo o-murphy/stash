@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Subprocess management"""
 # info: parts of this module has been copied from the original subprocess-module
 
@@ -20,8 +19,9 @@
 
 import os
 import select
-import time
 import sys
+import time
+
 from mlpatches import base, l2c
 from six import integer_types, string_types
 
@@ -30,7 +30,7 @@ list2cmdline = l2c.list2cmdline
 
 # constants
 try:
-    # setup MAXFD. we dont require this, but other scripts may expect this value to be present
+    # setup MAXFD. we don't require this, but other scripts may expect this value to be present
     MAXFD = os.sysconf("SC_OPEN_MAX")
 except:
     MAXFD = 256
@@ -48,9 +48,7 @@ class CalledProcessError(Exception):
         self.output = output
 
     def __str__(self):
-        return "Command '{c}' returned non-zero exit status {s}".format(
-            c=self.cmd, s=self.returncode
-        )
+        return f"Command '{self.cmd}' returned non-zero exit status {self.returncode}"
 
 
 def call(*args, **kwargs):
@@ -74,7 +72,7 @@ def check_output(*args, **kwargs):
 
     If the return code was non-zero it raises a CalledProcessError. The CalledProcessError object will have the return code in the returncode attribute and any output in the output attribute."""
     if "stdout" in kwargs:
-        raise ValueError("stdout argument not allowed, it will be overriden.")
+        raise ValueError("stdout argument not allowed, it will be override.")
     p = Popen(stdout=PIPE, *args, **kwargs)
     out, _ = p.communicate()
     rc = p.poll()
@@ -86,7 +84,7 @@ def check_output(*args, **kwargs):
     return out
 
 
-class Popen(object):
+class Popen:
     """Execute a child program in a new process. On Unix, the class uses os.execvp()-like behavior to execute the child program. On Windows, the class uses the Windows CreateProcess() function. The arguments to Popen are as follows."""
 
     def __init__(
@@ -122,7 +120,7 @@ class Popen(object):
             self.cmd = l2c.list2cmdline(args)
 
         # === setup std* ===
-        rfm = "rU" if universal_newlines else "rb"
+        rfm = "r" if universal_newlines else "rb"
         # setup stdout
         if stdout is None:
             # use own stdout
@@ -193,7 +191,7 @@ class Popen(object):
         """called on deletion"""
         try:
             self._close()
-        except Exception as e:
+        except Exception:
             pass
 
     def _run(self):
@@ -213,10 +211,7 @@ class Popen(object):
 
     def poll(self):
         """Check if child process has terminated. Set and return returncode attribute."""
-        if self._worker is None:
-            self.returncode = None
-            return self.returncode
-        elif self._worker.is_alive():
+        if self._worker is None or self._worker.is_alive():
             self.returncode = None
             return self.returncode
         else:
@@ -246,6 +241,7 @@ class Popen(object):
         rfs = []
         wfs = []
         ex = []
+        stderrdata = None
         if self.stdout is not None:
             stdoutdata = ""
             rfs.append(self.stdout)
@@ -264,7 +260,7 @@ class Popen(object):
             wfs.append(self.stdin)
 
         while len(rfs + wfs) > 0:
-            tr, tw, he = select.select(rfs, wfs, ex)
+            tr, tw, _he = select.select(rfs, wfs, ex)
             if self.stdin in tw:
                 if len(input) < 4096:
                     self.stdin.write(input)
@@ -287,9 +283,9 @@ class Popen(object):
                     stdoutdata += data
 
         if seo:
-            return (stdoutdata, stdoutdata)
+            return stdoutdata, stdoutdata
         else:
-            return (stdoutdata, stderrdata)
+            return stdoutdata, stderrdata
 
     def _close(self):
         """close all fds and do other cleanup actions"""

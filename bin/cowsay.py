@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
-from __future__ import print_function
-
+#!/usr/bin/env python
 # by Siddharth Duahantha
 # 28 July 2017
-import sys
 import argparse
+import sys
 
 COW = r"""         \   ^__^
           \  (oo)\_______
@@ -51,8 +49,7 @@ def main():
         text = ""
         while True:
             inp = sys.stdin.read(4096)
-            if inp.endswith("\n"):
-                inp = inp[:-1]
+            inp = inp.removesuffix("\n")
             if not inp:
                 break
             text += inp

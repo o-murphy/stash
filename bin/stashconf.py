@@ -1,10 +1,8 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """List and set StaSh configuration options"""
 
-from __future__ import print_function
-
-import sys
 import argparse
+import sys
 
 _stash = globals()["_stash"]
 

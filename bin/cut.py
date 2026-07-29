@@ -1,11 +1,15 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """Print selected parts of lines from each FILE to standard output."""
 
-from __future__ import print_function
-import sys
 import argparse
+import fileinput
+import sys
 
-_stash = globals()["_stash"]
+
+def input_stream(files=None):
+    with fileinput.input(files=files, encoding="utf-8") as stream:
+        for line in stream:
+            yield line, fileinput.filename(), fileinput.filelineno()
 
 
 def construct_indices_from_list_spec(list_spec):
@@ -42,12 +46,12 @@ def main(args):
 
     indices = construct_indices_from_list_spec(ns.fields)
 
-    for infields in _stash.libcore.input_stream(ns.files):
+    for infields in input_stream(ns.files):
         if infields[0] is None:
             _, filename, e = infields
             print("%s: %s" % (filename, repr(e)))
         else:
-            line, filename, lineno = infields
+            line, filename, _lineno = infields
             fields = line.split(ns.delimiter)
             if len(fields) == 1:
                 print(fields[0])

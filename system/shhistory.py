@@ -1,15 +1,14 @@
-# -*- coding: utf-8 -*-
 """
 StaSh input history
 """
 
-from io import open
+import builtins
 import json
 
 from .shcommon import ShEventNotFound
 
 
-class ShHistory(object):
+class ShHistory:
     """
     This class is responsible for input history.
     :param stash: the StaSh core
@@ -49,7 +48,7 @@ class ShHistory(object):
         """
         shh = cls(stash)
         try:
-            with open(path, "r", encoding=cls.ENCODING) as fin:
+            with builtins.open(path, "r", encoding=cls.ENCODING) as fin:
                 h = json.loads("" + fin.read())
         except ValueError:
             h = {"StaSh.runtime": cls.load_old_format(path)}
@@ -65,8 +64,8 @@ class ShHistory(object):
         :return: the lines loaded from the file
         :rtype: list of str
         """
-        with open(path, "r", encoding=cls.ENCODING) as fin:
-            lines = [line.strip() for line in fin.readlines()]
+        with builtins.open(path, "r", encoding=cls.ENCODING) as fin:
+            lines = [line.strip() for line in fin]
         return lines
 
     def save(self, path):
@@ -75,7 +74,7 @@ class ShHistory(object):
         :param path: path to save to.
         :type path: str
         """
-        with open(path, "w", encoding=self.ENCODING) as fout:
+        with builtins.open(path, "w", encoding=self.ENCODING) as fout:
             s = json.dumps(self._histories)
             fout.write("" + s)  # ensure unicode
 

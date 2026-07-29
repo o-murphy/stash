@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 """this module contains the patches for the os module."""
 
 from mlpatches.base import FunctionPatch, PatchGroup
-
 from mlpatches.os_popen import popen, popen2, popen3, popen4, system
 from mlpatches.os_process import getpid, getppid, kill
 
@@ -10,7 +8,6 @@ from mlpatches.os_process import getpid, getppid, kill
 
 
 class PopenPatch(FunctionPatch):
-    PY2 = True
     PY3 = False
     module = "os"
     function = "popen"
@@ -18,7 +15,6 @@ class PopenPatch(FunctionPatch):
 
 
 class Popen2Patch(FunctionPatch):
-    PY2 = True
     PY3 = False
     module = "os"
     function = "popen2"
@@ -26,7 +22,6 @@ class Popen2Patch(FunctionPatch):
 
 
 class Popen3Patch(FunctionPatch):
-    PY2 = True
     PY3 = False
     module = "os"
     function = "popen3"
@@ -34,7 +29,6 @@ class Popen3Patch(FunctionPatch):
 
 
 class Popen4Patch(FunctionPatch):
-    PY2 = True
     PY3 = False
     module = "os"
     function = "popen4"
@@ -42,7 +36,6 @@ class Popen4Patch(FunctionPatch):
 
 
 class SystemPatch(FunctionPatch):
-    PY2 = True
     PY3 = False
     module = "os"
     function = "system"
@@ -50,7 +43,6 @@ class SystemPatch(FunctionPatch):
 
 
 class GetpidPatch(FunctionPatch):
-    PY2 = True
     PY3 = True
     module = "os"
     function = "getpid"
@@ -58,7 +50,6 @@ class GetpidPatch(FunctionPatch):
 
 
 class GetppidPatch(FunctionPatch):
-    PY2 = True
     PY3 = True
     module = "os"
     function = "getppid"
@@ -66,7 +57,6 @@ class GetppidPatch(FunctionPatch):
 
 
 class KillPatch(FunctionPatch):
-    PY2 = True
     PY3 = True
     module = "os"
     function = "kill"

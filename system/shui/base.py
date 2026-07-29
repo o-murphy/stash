@@ -6,24 +6,22 @@ import ast
 import logging
 import time
 
-import six
-
 from ..shcommon import (
     K_CC,
     K_CD,
-    K_HUP,
+    K_CU,
+    K_CZ,
     K_HDN,
+    K_HIST,
+    K_HUP,
+    K_KB,
     K_LEFT,
     K_RIGHT,
-    K_CU,
     K_TAB,
-    K_HIST,
-    K_CZ,
-    K_KB,
 )
 
 
-class ShBaseUI(object):
+class ShBaseUI:
     """
     Baseclass for the UI.
     :param stash: assoziated StaSh instance
@@ -131,7 +129,7 @@ class ShBaseUI(object):
         :type vk: int
         """
         if self.debug:
-            self.logger.debug("vk_tapped({vk})".format(vk=vk))
+            self.logger.debug(f"vk_tapped({vk})")
         if vk == K_TAB:  # Tab completion
             rng = self.terminal.selected_range
             # Valid cursor positions are only when non-selection and after the modifiable position
@@ -209,7 +207,7 @@ class ShBaseUI(object):
         self.stash.runtime.history.idx = idx
 
 
-class ShBaseTerminal(object):
+class ShBaseTerminal:
     """
     This is the base class for the multiline text used for both in- and output.
     Implementations of the terminal should call the stash.useractionproxy.* methods as appropiate.
@@ -250,7 +248,7 @@ class ShBaseTerminal(object):
 
     @text.setter
     def text(self, value):
-        assert isinstance(value, six.text_type)
+        assert isinstance(value, str)
         raise NotImplementedError()
 
     @property
@@ -309,7 +307,7 @@ class ShBaseTerminal(object):
         raise NotImplementedError()
 
 
-class ShTerminalDelegate(object):
+class ShTerminalDelegate:
     """
     The Delegate for the terminal.
     This will be called from the ShUserActionProxy.
@@ -386,7 +384,7 @@ class ShTerminalDelegate(object):
             self.mini_buffer.sync_cursor(self.terminal.selected_range)
 
 
-class ShBaseSequentialRenderer(object):
+class ShBaseSequentialRenderer:
     """
     A base class for a specific renderer for `ShSequentialScreen`. It does its job by
     building texts from the in-memory screen and insert them to the

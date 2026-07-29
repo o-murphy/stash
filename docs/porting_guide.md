@@ -134,44 +134,42 @@ This class is responsible for rendering the text onto your terminal.
 #### Code for `render()`:
 This code is a modified version copy&pasted from `tkui.py`, which in turn got it from the original UI.
 ```python
-    def render(self, no_wait=False):
-        # Lock screen to get atomic information
-        with self.screen.acquire_lock():
-            intact_left_bound, intact_right_bound = self.screen.get_bounds()
-            screen_buffer_length = self.screen.text_length
-            cursor_xs, cursor_xe = self.screen.cursor_x
-            renderable_chars = self.screen.renderable_chars
-            self.screen.clean()
+def render(self, no_wait=False):
+    # Lock screen to get atomic information
+    with self.screen.acquire_lock():
+        intact_left_bound, intact_right_bound = self.screen.get_bounds()
+        screen_buffer_length = self.screen.text_length
+        cursor_xs, cursor_xe = self.screen.cursor_x
+        renderable_chars = self.screen.renderable_chars
+        self.screen.clean()
 
-        # First remove any leading texts that are rotated out
-        if intact_left_bound > 0:
-            self.terminal.replace_in_range((0, intact_left_bound), '')
+    # First remove any leading texts that are rotated out
+    if intact_left_bound > 0:
+        self.terminal.replace_in_range((0, intact_left_bound), "")
 
-        tv_text_length = self.terminal.text_length  # tv_text_length = tvo_texts.length()
+    tv_text_length = self.terminal.text_length  # tv_text_length = tvo_texts.length()
 
-        # Second (re)render any modified trailing texts
-        # When there are contents beyond the right bound, either on screen
-        # or on terminal, the contents need to be re-rendered.
-        if intact_right_bound < max(tv_text_length, screen_buffer_length):
-            if len(renderable_chars) > 0:
-                self.terminal.replace_in_range(
-                    (intact_right_bound,
-                     tv_text_length - intact_right_bound),
-                    # "".join([c.data for c in renderable_chars]),
-                    renderable_chars,
-                )
-            else:  # empty string, pure deletion
-                self.terminal.replace_in_range(
-                    (intact_right_bound,
-                     tv_text_length - intact_right_bound),
-                    '',
-                )
+    # Second (re)render any modified trailing texts
+    # When there are contents beyond the right bound, either on screen
+    # or on terminal, the contents need to be re-rendered.
+    if intact_right_bound < max(tv_text_length, screen_buffer_length):
+        if len(renderable_chars) > 0:
+            self.terminal.replace_in_range(
+                (intact_right_bound, tv_text_length - intact_right_bound),
+                # "".join([c.data for c in renderable_chars]),
+                renderable_chars,
+            )
+        else:  # empty string, pure deletion
+            self.terminal.replace_in_range(
+                (intact_right_bound, tv_text_length - intact_right_bound),
+                "",
+            )
 
-        # Set the cursor position. This makes terminal and main screen cursors in sync
-        self.terminal.selected_range = (cursor_xs, cursor_xe)
+    # Set the cursor position. This makes terminal and main screen cursors in sync
+    self.terminal.selected_range = (cursor_xs, cursor_xe)
 
-        # Ensure cursor line is visible by scroll to the end of the text
-        self.terminal.scroll_to_end()
+    # Ensure cursor line is visible by scroll to the end of the text
+    self.terminal.scroll_to_end()
 ```
 
 ## Loading the UI correctly

@@ -1,21 +1,24 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """Show information about this StaSh installation."""
 
-from __future__ import print_function
-
 import os
-import io
-import sys
-import time
 import platform
 import plistlib
+import sys
+import time
 
 _stash = globals()["_stash"]
 
 try:
     collapseuser = _stash.libcore.collapseuser
 except AttributeError:
-    collapseuser = lambda p: p
+    collapseuser = None
+
+if not collapseuser:
+
+    def collapseuser(p):
+        return p
+
 
 IN_PYTHONISTA = sys.executable.find("Pythonista") >= 0
 
@@ -25,21 +28,21 @@ IN_PYTHONISTA = sys.executable.find("Pythonista") >= 0
 def pythonista_version():  # 2.0.1 (201000)
     try:
         path = os.path.abspath(os.path.join(sys.executable, "..", "Info.plist"))
-        with io.open(path, "rb") as fin:
+        with open(path, "rb") as fin:
             plist = plistlib.load(fin)
         return "{CFBundleShortVersionString} ({CFBundleVersion})".format(**plist)
     except Exception as e:
-        return "UNKNOWN ({e})".format(e=repr(e))
+        return f"UNKNOWN ({e!r})"
 
 
 def ios_version():  # 9.2 (64-bit iPad5,4)
     try:
         ios_ver, _, machine_model = platform.mac_ver()
     except Exception as e:
-        return "UNKNOWN ({e})".format(e=repr(e))
+        return f"UNKNOWN ({e!r})"
     else:
         bit = platform.architecture()[0].rstrip("bit") + "-bit"
-        return "{} ({} {})".format(ios_ver, bit, machine_model)
+        return f"{ios_ver} ({bit} {machine_model})"
 
 
 def print_stash_info():
@@ -86,10 +89,10 @@ def print_paths():
     """
     print(_stash.text_bold("BIN_PATH:"))
     for p in os.environ["BIN_PATH"].split(":"):
-        print("  {}".format(collapseuser(p)))
+        print(f"  {collapseuser(p)}")
     print(_stash.text_bold("PYTHONPATH:"))
     for p in os.environ["PYTHONPATH"].split(":"):
-        print("  {}".format(collapseuser(p)))
+        print(f"  {collapseuser(p)}")
 
 
 def print_machine_info():
@@ -108,7 +111,7 @@ def print_libs():
     print(_stash.text_bold("Loaded libraries:"))
     for an in dir(_stash):
         if an.startswith("lib"):
-            print("  {}".format(an))
+            print(f"  {an}")
 
 
 def main():

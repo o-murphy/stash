@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """tests for libversion"""
 
 import operator
@@ -17,7 +16,6 @@ class LibVersionTests(StashTestCase):
     def test_import(self):
         """test that the libversion module can be imported"""
         # $STASH_ROOT/lib/ *should* be in sys.path, thus an import should be possible
-        import libversion
 
     def test_version_specifier_parse(self):
         """test 'libversion.VersionSpecifier.parse_requirement()'"""
@@ -52,15 +50,11 @@ class LibVersionTests(StashTestCase):
                 self.stash.libversion.VersionSpecifier.parse_requirement(req)
             )
             self.assertEqual(name, pkg)
-            if self.stash.PY3:
-                # in py3, assertItemsEqual has been renamed to assertCountEqual
-                if spec is not None:
-                    self.assertCountEqual(ver_spec.specs, spec)
-                self.assertCountEqual(exp_extras, extras)
-            else:
-                if spec is not None:
-                    self.assertItemsEqual(ver_spec.specs, spec)
-                self.assertItemsEqual(exp_extras, extras)
+
+            # in py3, assertItemsEqual has been renamed to assertCountEqual
+            if spec is not None:
+                self.assertCountEqual(ver_spec.specs, spec)
+            self.assertCountEqual(exp_extras, extras)
 
     def test_version_specifier_match(self):
         """test 'libversion.VersionSpecifier().match()'"""
@@ -122,7 +116,7 @@ class LibVersionTests(StashTestCase):
             ),
         ]
         for rs, test in to_test:
-            _, ver_spec, extras = (
+            _, ver_spec, _extras = (
                 self.stash.libversion.VersionSpecifier.parse_requirement(rs)
             )
             for ts, expected in test:
@@ -222,8 +216,7 @@ class LibVersionTests(StashTestCase):
         for vs, ea in to_test:
             version = self.stash.libversion.Version.parse(vs)
             self.assertIsInstance(version, self.stash.libversion.Version)
-            for ean in ea.keys():
-                eav = ea[ean]
+            for ean, eav in ea.items():
                 assert hasattr(version, ean)
                 self.assertEqual(getattr(version, ean), eav)
 

@@ -1,12 +1,11 @@
-#! python2
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 # StaSh utility
 """manage your dropbox configuration."""
 
 import cmd
-import keychain
 import sys
 
+import keychain
 from stashutils import dbutils
 
 _stash = globals()["_stash"]

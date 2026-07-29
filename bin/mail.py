@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """
 Send messages/files from stash.
 
@@ -20,25 +20,21 @@ optional arguments:
   -e                    Edit .mailrc
 """
 
-from __future__ import print_function
-
 import argparse
 import os
 import smtplib
 import sys
+from configparser import RawConfigParser
 from email import encoders
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from email.utils import formatdate
-
-from six.moves import input
-from six.moves.configparser import RawConfigParser
-from six.moves.email_mime_base import MIMEBase
-from six.moves.email_mime_multipart import MIMEMultipart
-from six.moves.email_mime_text import MIMEText
 
 APP_DIR = os.environ["STASH_ROOT"]
 
 
-class Mail(object):
+class Mail:
     def __init__(self, cfg_file="", verbose=False):
         # from config
         self.cfg_file = cfg_file
@@ -72,7 +68,7 @@ class Mail(object):
         self.tls = parser.get("mail", "tls")
 
     def edit_cfg(self):
-        global _stash
+        global _stash  # noqa: PLW0602
         _stash("edit -t %s" % self.cfg_file)
         sys.exit(0)
 
@@ -141,6 +137,7 @@ password = Your user password
             server.close()
         except Exception as e:
             errorMsg = "Unable to send email. Error: %s" % str(e)
+            print(errorMsg)
 
 
 if __name__ == "__main__":

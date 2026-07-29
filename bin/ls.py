@@ -1,17 +1,29 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """List information about files (the current directory by default)"""
 
-from __future__ import print_function
+import mimetypes
 import os
 import sys
-import time
 import tarfile
+import time
 import zipfile
-import imghdr
 from argparse import ArgumentParser
 
 from stashutils.mount_ctrl import get_manager
+
+if sys.version_info < (3, 13):
+    _guess_file_type = mimetypes.guess_type
+else:
+    _guess_file_type = mimetypes.guess_file_type
+
+
+def guess_img(path):
+    mimetype = _guess_file_type(path)
+    if mimetype:
+        type_, _encoding = mimetype
+        if type_ and type_.startswith("image"):
+            return mimetype
+    return None
 
 
 def is_mounted(path):
@@ -47,22 +59,19 @@ def is_archive(path):
         return arch
     else:
         fe = get_file_extension(path)
-        if fe in ("zip", "rar", "tar", "bz2", "gz"):
-            return True
-        else:
-            return False
+        return fe in ("zip", "rar", "tar", "bz2", "gz")
 
 
 def is_image(path):
     """checks wether path points to an image."""
     if not is_mounted(path):
         try:
-            return imghdr.what(path) is not None
+            return guess_img(path) is not None
         except:
             # continue execution outside of the if-statement
             pass
     fe = get_file_extension(path)
-    if fe in (
+    return fe in (
         "rgb",
         "gif",
         "pbm",
@@ -75,10 +84,7 @@ def is_image(path):
         "jpg",
         "bmp",
         "png",
-    ):
-        return True
-    else:
-        return False
+    )
 
 
 def main(args):
@@ -108,7 +114,7 @@ def main(args):
     else:
 
         def _filter(filename):
-            return False if filename.startswith(".") else True
+            return not filename.startswith(".")
 
     if ns.long:
 
@@ -119,7 +125,7 @@ def main(args):
 
             home = os.environ["HOME"]
             fullpath = os.path.join(dirname, filename)
-            filename = "{:30}".format(filename)
+            filename = f"{filename:30}"
 
             if os.path.islink(fullpath):
                 filename = _stash.text_color(filename, "yellow")
@@ -130,7 +136,7 @@ def main(args):
                 filename = _stash.text_color(filename, "green")
             elif tarfile.is_tarfile(fullpath) or zipfile.is_zipfile(fullpath):
                 filename = _stash.text_color(filename, "red")
-            elif imghdr.what(fullpath) is not None:
+            elif guess_img(fullpath) is not None:
                 filename = _stash.text_color(filename, "brown")
 
             ret = (
@@ -160,7 +166,7 @@ def main(args):
                 return _stash.text_color(filename, "green")
             elif tarfile.is_tarfile(fullpath) or zipfile.is_zipfile(fullpath):
                 return _stash.text_color(filename, "red")
-            elif imghdr.what(fullpath) is not None:
+            elif guess_img(fullpath) is not None:
                 return _stash.text_color(filename, "brown")
             else:
                 return filename
@@ -180,7 +186,7 @@ def main(args):
                 exitcode = 1
             elif os.path.isdir(f):
                 filenames = [".", ".."] + os.listdir(f)
-                fn = f[:-1] if f.endswith("/") else f
+                fn = f.removesuffix("/")
                 out_dir.append(
                     "%s/:\n%s\n"
                     % (fn, joiner.join(_fmt(sf, f) for sf in filenames if _filter(sf)))
@@ -192,7 +198,7 @@ def main(args):
             print(o)
         print(joiner.join(out_file))
         if out_file:
-            print("")
+            print()
         for o in out_dir:
             print(o)
     sys.exit(exitcode)

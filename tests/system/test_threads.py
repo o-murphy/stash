@@ -1,7 +1,5 @@
-# coding=utf-8
 import time
-
-from six import StringIO
+from io import StringIO
 
 from stash.tests.stashtest import StashTestCase
 
@@ -28,7 +26,7 @@ sleeping ... 1
         self.stash("test_102_1.py &", final_outs=outs)
         self.stash("test_102_2.py &", final_outs=outs)
         time.sleep(5)
-        s = outs.getvalue()
+        _s = outs.getvalue()
 
         # Count the number of times the output switches between threads
         change_cnt = 0

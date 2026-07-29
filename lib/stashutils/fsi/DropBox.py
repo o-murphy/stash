@@ -1,19 +1,17 @@
-# -*- coding: utf-8 -*-
 """The FSI for dropbox."""
 
 # this module is named 'DropBox' instead of 'dropbox' to avoid a
 # naming conflict.
-import os
 import logging
+import os
 import stat
 import tempfile
 
 import dropbox
 
-from stashutils.fsi.errors import OperationFailure, IsDir, IsFile
-from stashutils.fsi.errors import AlreadyExists
-from stashutils.fsi.base import BaseFSI, make_stat, calc_mode
 from stashutils.dbutils import get_dropbox_client
+from stashutils.fsi.base import BaseFSI, calc_mode, make_stat
+from stashutils.fsi.errors import AlreadyExists, IsDir, IsFile, OperationFailure
 
 # turn down requests log verbosity
 logging.getLogger("requests").setLevel(logging.CRITICAL)
@@ -47,7 +45,7 @@ class DropboxFSI(BaseFSI):
             return e.message
         else:
             if dbci is None:
-                return "No Dropbox configured for '{u}'.".format(u=args[0])
+                return f"No Dropbox configured for '{args[0]}'."
             else:
                 self.client = dbci
             return True
@@ -56,7 +54,7 @@ class DropboxFSI(BaseFSI):
         return self.path
 
     def repr(self):
-        return "Dropbox [CWD: {p}]".format(p=self.path)
+        return f"Dropbox [CWD: {self.path}]"
 
     def close(self):
         pass
@@ -146,7 +144,7 @@ class DropboxFSI(BaseFSI):
     def open(self, name, mode="rb", buffering=0):
         mode = mode.replace("+", "")
         ap = self.abspath(name)
-        if mode in ("r", "rb", "rU"):
+        if mode in ("r", "rb"):
             try:
                 response = self.client.files_download(ap)[1]
                 # unfortunaly, we cant return response.raw because it does not
@@ -196,7 +194,7 @@ class DropboxFSI(BaseFSI):
         return s
 
 
-class Dropbox_Upload(object):
+class Dropbox_Upload:
     """utility file-like class used for Dropbox-uploads."""
 
     def __init__(self, client, path, mode):
@@ -250,14 +248,12 @@ class Dropbox_Upload(object):
 
     def flush(self):
         """no-op"""
-        pass
 
     def truncate(self, size=-1):
         """no-op"""
-        pass
 
 
-class Dropbox_Download(object):
+class Dropbox_Download:
     """
     utility file-like class used for Dropbox-downloads.
     There are two reasons to use this class:
@@ -357,7 +353,7 @@ class Dropbox_Download(object):
         while True:
             d = self.read(1)
             buff += d
-            if any([e in buff for e in ends]):
+            if any(e in buff for e in ends):
                 return buff
             if (size <= len(buff)) or (not d):
                 return buff
@@ -395,8 +391,6 @@ class Dropbox_Download(object):
 
     def flush(self):
         """no-op"""
-        pass
 
     def truncate(self, size=-1):
         """no-op"""
-        pass

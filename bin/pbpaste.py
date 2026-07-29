@@ -1,15 +1,9 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """Writes the contents of the system clipboard to a file."""
-
-from __future__ import print_function
 
 import argparse
 import os
 import sys
-import io
-
-import six
-
 
 _stash = globals()["_stash"]
 
@@ -29,22 +23,20 @@ def main(args):
     if ns.file:
         if os.path.exists(ns.file):
             print(
-                _stash.text_color("pbpaste: {}: file exists".format(ns.file), "red"),
+                _stash.text_color(f"pbpaste: {ns.file}: file exists", "red"),
                 file=sys.stderr,
             )
             status = 1
         else:
             try:
-                if isinstance(content, six.binary_type):
-                    with io.open(ns.file, "wb") as f:
+                if isinstance(content, (bytes, bytearray)):
+                    with open(ns.file, "wb") as f:
                         f.write(content)
                 else:
-                    with io.open(ns.file, "w", encoding="utf-8") as f:
+                    with open(ns.file, "w", encoding="utf-8") as f:
                         f.write(content)
             except Exception as err:
-                print(
-                    "pbpaste: {}: {!s}".format(type(err).__name__, err), file=sys.stderr
-                )
+                print(f"pbpaste: {type(err).__name__}: {err!s}", file=sys.stderr)
                 status = 1
     else:
         print(content, end="")

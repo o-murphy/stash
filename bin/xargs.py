@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """Construct argument list(s) and execute utility"""
 
-import os
-import sys
 import argparse
+import sys
 
 _stash = globals()["_stash"]
 

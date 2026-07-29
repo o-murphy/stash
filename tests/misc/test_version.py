@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """tests for the 'version' command."""
 
 import platform

@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """Display help for a command in $STASH_ROOT/bin/ or a topic, or list all commands if no name is given."""
-
-from __future__ import print_function
 
 import argparse
 import ast
@@ -10,11 +8,7 @@ import sys
 
 from stash.system.shcommon import _STASH_EXTENSION_BIN_PATH, _STASH_EXTENSION_MAN_PATH
 
-try:
-    raw_input
-except NameError:
-    # py3
-    raw_input = input
+raw_input = input
 
 _stash = globals()["_stash"]
 
@@ -159,7 +153,7 @@ def show_page(path):
         _stash("webviewer -n '{u}'".format(u=content.replace("\n", "")))
     elif path.endswith(".html"):
         print("Opening quicklook...")
-        _stash("quicklook {p}".format(p=path))
+        _stash(f"quicklook {path}")
     else:
         show_text(content)
 
@@ -201,22 +195,18 @@ def main(args):
 
     if not ns.topic:
         cmds = all_commands()
-        if len(cmds) > 100:
-            if raw_input(
-                "List all {} commands?".format(len(cmds))
-            ).strip().lower() not in ("y", "yes"):
-                sys.exit(0)
+        if len(cmds) > 100 and raw_input(
+            f"List all {len(cmds)} commands?"
+        ).strip().lower() not in ("y", "yes"):
+            sys.exit(0)
         for cmd in cmds:
-            print(
-                _stash.text_bold("{:>11}: ".format(cmd))
-                + get_summary(find_command(cmd))
-            )
+            print(_stash.text_bold(f"{cmd:>11}: ") + get_summary(find_command(cmd)))
         print("Type 'man topics' to see miscellaneous help topics")
         sys.exit(0)
     else:
         ft, path = get_type(ns.topic)
         if ft == TYPE_NOTFOUND:
-            print(_stash.text_color("man: no help for '{}'".format(ns.topic), "red"))
+            print(_stash.text_color(f"man: no help for '{ns.topic}'", "red"))
             sys.exit(1)
         if ft == TYPE_LISTTOPICS:
             show_topics()
@@ -226,19 +216,17 @@ def main(args):
                 docstring = get_docstring(path)
             except Exception as err:
                 print(
-                    _stash.text_color(
-                        "man: {}: {!s}".format(type(err).__name__, err), "red"
-                    ),
+                    _stash.text_color(f"man: {type(err).__name__}: {err!s}", "red"),
                     file=sys.stderr,
                 )
                 sys.exit(1)
 
             if docstring:
-                print("Docstring of command '{}':\n{}".format(ns.topic, docstring))
+                print(f"Docstring of command '{ns.topic}':\n{docstring}")
             else:
                 print(
                     _stash.text_color(
-                        "man: command '{}' has no docstring".format(ns.topic), "red"
+                        f"man: command '{ns.topic}' has no docstring", "red"
                     )
                 )
             sys.exit(0)

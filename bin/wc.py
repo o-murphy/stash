@@ -1,14 +1,17 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """Print newline, word, and byte counts for each FILE, and a total line if
 more than one FILE is specified.
 """
 
-from __future__ import print_function
-import os
-import sys
 import argparse
+import fileinput
+import sys
 
-_stash = globals()["_stash"]
+
+def input_stream(files=None):
+    with fileinput.input(files=files, encoding="utf-8") as stream:
+        for line in stream:
+            yield line, fileinput.filename(), fileinput.filelineno()
 
 
 def main(args):
@@ -38,7 +41,8 @@ def main(args):
     wd_count = 0
     bt_count = 0
     filename_old = None
-    for infields in _stash.libcore.input_stream(ns.files):
+
+    for infields in input_stream(ns.files):
         if filename_old is None:
             filename_old = infields[1]
 
@@ -47,7 +51,7 @@ def main(args):
             print("%s: %s" % (filename, repr(e)))
             filename_old = None
         else:
-            line, filename, lineno = infields
+            line, filename, _lineno = infields
             if filename != filename_old:
                 results.append((nl_count, wd_count, bt_count, filename_old))
                 nl_count = 0

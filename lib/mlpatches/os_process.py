@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
 """
 This module contains patches for the 'os'-module to make StaSh's thread-system like a process-system (from the view of the script)"""
 
-import os
 import threading
+
 from mlpatches import base, os_popen
 
 _stash = base._stash
@@ -36,7 +35,7 @@ def kill(patch, pid, sig):
     """Send signal sig to the process pid. Constants for the specific signals available on the host platform are defined in the signal module"""
     io = os_popen.VoidIO()
     _stash(
-        "kill {pid}".format(pid=pid),
+        f"kill {pid}",
         add_to_history=False,
         final_errs=io,
         final_outs=io,

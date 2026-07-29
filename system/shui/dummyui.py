@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Stub ui to allow debug on PC
 """
@@ -18,7 +17,7 @@ def get_screen_size():
     return 100, 100
 
 
-class View(object):
+class View:
     def __init__(self, *args, **kwargs):
         self.on_screen = True
         self.width = 100
@@ -54,13 +53,13 @@ class View(object):
 
 class TextField(View):
     def __init__(self, *args, **kwargs):
-        super(TextField, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.text = ""
 
 
 class TextView(View):
     def __init__(self, *args, **kwargs):
-        super(TextView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.text = ""
         self.selected_range = (0, 0)
 
@@ -82,14 +81,14 @@ class ScrollView(View):
 
 class Button(View):
     def __init__(self, *args, **kwargs):
-        super(Button, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class TableView(View):
     def __init__(self, *args, **kwargs):
-        super(TableView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
-class ListDataSource(object):
+class ListDataSource:
     def __init__(self, lst):
         pass

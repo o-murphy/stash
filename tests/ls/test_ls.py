@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """tests for the 'ls' command"""
 
 import os

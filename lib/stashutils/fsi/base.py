@@ -1,15 +1,26 @@
-# -*- coding: utf-8 -*-
 """helper functions and base classes."""
 
-from stashutils.fsi.errors import OperationFailure
-import random
 import os
-import time
+import random
 import stat
-import pwd
+import sys
+import time
+
+from stashutils.fsi.errors import OperationFailure
 
 
-class BaseFSI(object):
+def _get_user_info():
+    uid = os.getuid()
+    if sys.executable.find("Pythonista") >= 0:
+        gid = os.getgid()
+    else:
+        import pwd
+
+        gid = pwd.getpwuid(uid).pw_gid
+    return uid, gid
+
+
+class BaseFSI:
     """
     Baseclass for all FSIs.
     Other FSIs should subclass this.
@@ -73,7 +84,6 @@ class BaseFSI(object):
     def close(self):
         """this should close the interface.
         There is a chance that this may not be called."""
-        pass
 
     def isdir(self, name):
         """this should return True if name is an existing directory and
@@ -173,8 +183,7 @@ def make_stat(
     if uid is None:
         uid = os.getuid()
     if gid is None:
-        uid2 = os.getuid()
-        gid = pwd.getpwuid(uid2).pw_gid
+        _uid2, gid = _get_user_info()
     if atime is None:
         atime = time.time()
     if mtime is None:

@@ -1,8 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """Print all arguments to stdout, separated by spaces."""
-
-from __future__ import print_function
 
 import sys
 
@@ -11,7 +8,7 @@ def main(args):
     # Not using argparse here, because echo should echo anything that is not a
     # valid and usable flag.
     end = "\n"
-    escapes = False  # NYI
+    _escapes = False  # NYI
     remove = []
     for i, arg in enumerate(args):
         if arg.startswith("-"):
@@ -20,9 +17,9 @@ def main(args):
                     if char == "n":
                         end = ""
                     elif char == "e":
-                        escapes = True
+                        _escapes = True
                     elif char == "E":
-                        escapes = False
+                        _escapes = False
                 remove.append(i)
             else:
                 continue

@@ -1,9 +1,9 @@
-# -*- coding: utf-8 -*-
 """This module contains the group definition for the mount patches."""
 
-from mlpatches.base import PatchGroup
-from mlpatches import mount_base
 from stashutils import mount_ctrl
+
+from mlpatches import mount_base
+from mlpatches.base import PatchGroup
 
 _BASE_PATCHES = list(
     filter(

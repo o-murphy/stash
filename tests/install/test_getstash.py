@@ -2,13 +2,13 @@
 Tests for getstash.py
 """
 
-import sys
 import os
+import shutil
+import sys
 import tempfile
 import time
-import shutil
 
-from stash.tests.stashtest import StashTestCase, ON_TRAVIS
+from stash.tests.stashtest import StashTestCase
 
 
 class GetstashTests(StashTestCase):
@@ -128,7 +128,7 @@ class GetstashTests(StashTestCase):
         tp = self.get_new_tempdir(create=True)
         toplevel_name = "stash-testing"
         toplevel = os.path.join(tp, toplevel_name)
-        zipname = "{}.zip".format(toplevel)
+        zipname = f"{toplevel}.zip"
         zippath = os.path.join(tp, zipname)
         zippath_wo_ext = os.path.splitext(zippath)[0]
         sourcepath = self.get_source_path()
@@ -175,16 +175,25 @@ class GetstashTests(StashTestCase):
         )
         for fn in expected:
             p = os.path.join(sd, fn)
-            self.assertTrue(
-                os.path.exists(sd), "'{}' not found after install!".format(p)
-            )
+            self.assertTrue(os.path.exists(sd), f"'{p}' not found after install!")
 
     def test_install_setup(self):
         """
         Run a dummy install using setup.py install
+
+        This used to run with dryrun=True (--dry-run), but recent
+        setuptools versions dropped --dry-run entirely (it's no longer in
+        Distribution.global_options, and isn't recognized as a command
+        option either -- "error: option --dry-run not recognized" on both
+        setuptools>=83 regardless of its position on the command line).
+        Since asuser=True (--user) also can't be combined with a custom
+        install_path (--prefix) -- "error: can't combine user with prefix,
+        exec_prefix/home, or install_(plat)base" -- the safe replacement is
+        the same one test_install_pythonista already uses: a real install,
+        contained to a disposable tempdir via install_path instead of
+        --user.
         """
         zp = self.create_stash_zipfile()
         td = self.get_new_tempdir()
         sd = os.path.join(td, "stash")
-        asuser = not ON_TRAVIS
-        self.run_getstash(zippath=zp, dist="setup", asuser=asuser, dryrun=True)
+        self.run_getstash(zippath=zp, dist="setup", install_path=sd)

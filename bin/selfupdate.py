@@ -1,4 +1,4 @@
-# coding=utf-8
+#!/usr/bin/env python
 """
 Selfupdate StaSh from the GitHub repo.
 
@@ -10,12 +10,12 @@ Usage: selfupdate.py [-n] [-f] [target]
        -f, --force    update without checking for new version
 """
 
-from __future__ import print_function
 import os
 import sys
-import requests
-from random import randint
 from argparse import ArgumentParser
+from random import randint
+
+import requests
 
 _stash = globals()["_stash"]
 
@@ -58,7 +58,7 @@ def get_remote_version(owner, branch):
 
 
 def main(args):
-    from distutils.version import StrictVersion
+    from packaging.version import Version
 
     ap = ArgumentParser()
     ap.add_argument(
@@ -89,7 +89,7 @@ def main(args):
         owner, branch = "ywangd", fields[0]
     else:
         owner, branch = "ywangd", "master"
-        print("Invalid target {}, using default {}:{}".format(target, owner, branch))
+        print(f"Invalid target {target}, using default {owner}:{branch}")
 
     print(
         _stash.text_style(
@@ -106,7 +106,7 @@ def main(args):
             print("Checking for new version ...")
             remote_version = get_remote_version(owner, branch)
 
-            if StrictVersion(remote_version) > StrictVersion(local_version):
+            if Version(remote_version) > Version(local_version):
                 print("New version available: %s" % remote_version)
             else:
                 has_update = False

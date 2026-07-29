@@ -1,16 +1,13 @@
-# -*- coding: utf-8 -*-
 """Interface to FTP-servers."""
 
 import ftplib
-import tempfile
 import os
 import stat
+import tempfile
 
 from stashutils.core import get_stash
-
-from stashutils.fsi.base import BaseFSI, make_stat, calc_mode
-from stashutils.fsi.errors import OperationFailure, IsDir, IsFile
-from stashutils.fsi.errors import AlreadyExists
+from stashutils.fsi.base import BaseFSI, calc_mode, make_stat
+from stashutils.fsi.errors import AlreadyExists, OperationFailure
 
 _stash = get_stash()
 
@@ -166,7 +163,7 @@ class FTPFSI(BaseFSI):
                 self.ftp.rmd(ap)
             except Exception as e2:
                 text = _stash.text_color(
-                    "Error trying to delete file: {e}!\n".format(e=e.message), "red"
+                    f"Error trying to delete file: {e.message}!\n", "red"
                 )
                 self.log(text)
                 text = _stash.text_color(
@@ -178,16 +175,14 @@ class FTPFSI(BaseFSI):
     def open(self, name, mode="rb", buffering=0):
         mode = mode.replace("+", "").replace("U", "")
         ap = self.abspath(name)
-        self.log("Opening '{p}' with mode '{m}'...\n".format(p=ap, m=mode))
+        self.log(f"Opening '{ap}' with mode '{mode}'...\n")
         if mode in ("r", "rb"):
             try:
                 tf = tempfile.TemporaryFile()
                 self.ftp.retrbinary("RETR " + ap, tf.write, 4096)
                 tf.seek(0)
             except Exception as e:
-                self.log(
-                    'Error during open("{p}","r"): {e}\n'.format(p=ap, e=e.message)
-                )
+                self.log(f'Error during open("{ap}","r"): {e.message}\n')
                 raise OperationFailure(e.message)
             return tf
         elif "w" in mode:
@@ -238,12 +233,12 @@ class FTPFSI(BaseFSI):
 
     def stat(self, name):
         ap = self.abspath(name)
-        self.log("stat: {p}\n".format(p=ap))
+        self.log(f"stat: {ap}\n")
         op = self.path
         try:
             size, type = self._get_total_size_and_type(ap)
         except Exception as e:
-            self.log("Error during stat: {e}\n".format(e=e.message))
+            self.log(f"Error during stat: {e.message}\n")
             raise OperationFailure(e.message)
         finally:
             self.ftp.cwd(op)
@@ -252,7 +247,7 @@ class FTPFSI(BaseFSI):
         return make_stat(size=size, mode=m)
 
 
-class FTP_Upload(object):
+class FTP_Upload:
     """utility class used for FTP-uploads.
     this class creates a tempfile, which is uploaded to the server when closed."""
 

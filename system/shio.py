@@ -1,10 +1,9 @@
-# coding: utf-8
 import logging
 import time
 from collections import deque
 
 
-class ShIO(object):
+class ShIO:
     """
     The ShIO object is the read/write interface to users and running scripts.
     It acts as a staging area so that the UI Delegate calls can return without
@@ -41,7 +40,6 @@ class ShIO(object):
         """
         This IO object cannot be closed.
         """
-        pass
 
     def seek(self, offset):
         """

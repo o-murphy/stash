@@ -1,11 +1,9 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """Package and compress (archive) files and directories"""
 
-from __future__ import print_function
-
+import argparse
 import os
 import sys
-import argparse
 import zipfile
 
 

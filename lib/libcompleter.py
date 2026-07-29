@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
-import os
 import json
+import os
 
 _subcmd_cfgfile = os.path.join(os.environ["STASH_ROOT"], ".completer_subcmd.json")
 
@@ -176,7 +175,7 @@ if os.path.exists(_subcmd_cfgfile) and os.path.isfile(_subcmd_cfgfile):
     try:
         with open(_subcmd_cfgfile) as ins:
             _subcmd_cfg.update(json.loads(ins.read()))
-    except IOError:
+    except OSError:
         pass
 
 
@@ -200,15 +199,14 @@ def subcmd_complete(toks):
     is_blank_completion = word_to_complete == ""
 
     cmd_word = toks[0]
-    if cmd_word.endswith(".py"):
-        cmd_word = cmd_word[:-3]
+    cmd_word = cmd_word.removesuffix(".py")
 
     pos = str(len(toks) - 1)
 
     try:
         cfg = _subcmd_cfg[cmd_word]
 
-        if pos in cfg.keys() and (
+        if pos in cfg and (
             not is_blank_completion
             or (is_blank_completion and cfg[pos]["blank_completion"])
         ):
@@ -217,7 +215,7 @@ def subcmd_complete(toks):
             )
             return cands, cfg[pos]["with_normal_completion"]
 
-        elif "-" in cfg.keys() and (
+        elif "-" in cfg and (
             (not is_blank_completion and word_to_complete.startswith("-"))
             or (is_blank_completion and cfg["-"]["blank_completion"])
         ):
@@ -234,7 +232,7 @@ def subcmd_complete(toks):
             if cands is not None:
                 return cands, cfg["-"]["with_normal_completion"]
 
-    except KeyError as e:
+    except KeyError:
         pass
 
     return None, None

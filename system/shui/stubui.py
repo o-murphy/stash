@@ -2,9 +2,7 @@
 Stub ui and terminal for testing.
 """
 
-import six
-
-from .base import ShBaseUI, ShBaseTerminal, ShBaseSequentialRenderer
+from .base import ShBaseSequentialRenderer, ShBaseTerminal, ShBaseUI
 
 
 class ShUI(ShBaseUI):
@@ -38,7 +36,7 @@ class ShTerminal(ShBaseTerminal):
 
     @text.setter
     def text(self, value):
-        assert isinstance(value, (six.text_type, six.binary_type))
+        assert isinstance(value, (str, bytes, bytearray))
         self._text = value
 
     @property
@@ -75,10 +73,10 @@ class ShSequentialRenderer(ShBaseSequentialRenderer):
     def render(self, no_wait=False):
         # Lock screen to get atomic information
         with self.screen.acquire_lock():
-            intact_left_bound, intact_right_bound = self.screen.get_bounds()
-            screen_buffer_length = self.screen.text_length
-            cursor_xs, cursor_xe = self.screen.cursor_x
-            renderable_chars = self.screen.renderable_chars
+            _intact_left_bound, _intact_right_bound = self.screen.get_bounds()
+            _screen_buffer_length = self.screen.text_length
+            _cursor_xs, _cursor_xe = self.screen.cursor_x
+            _renderable_chars = self.screen.renderable_chars
             self.screen.clean()
 
         self.terminal.text = self.screen.text

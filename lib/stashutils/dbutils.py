@@ -1,14 +1,12 @@
-# -*- coding: utf-8 -*-
 """dropbox utilities."""
 
-import sys
 import base64
 import pickle
+import sys
 
-import dropbox
-
-import keychain
 import clipboard
+import dropbox
+import keychain
 
 from stashutils import core
 
@@ -66,7 +64,7 @@ def dropbox_setup(username, stdin, stdout):
     access_token = stdin.readline().strip()
     if len(access_token) == 0:
         access_token = clipboard.get()
-        stdout.write("Using clipboard (length={l}).\n".format(l=len(access_token)))
+        stdout.write(f"Using clipboard (length={len(access_token)}).\n")
     stdout.write("Testing token... ")
     try:
         db = dropbox.Dropbox(access_token)
@@ -152,7 +150,7 @@ def _menu(header, choices, stdin=None, stdout=None):
     while True:
         stdout.write(header + "\n")
         for i, n in enumerate(choices):
-            stdout.write("   {i: >3}: {n}\n".format(i=i, n=n))
+            stdout.write(f"   {i: >3}: {n}\n")
         stdout.write("n?>")
         answer = stdin.readline().strip()
         try:
@@ -165,4 +163,4 @@ def _menu(header, choices, stdin=None, stdout=None):
 def _open_url(url):
     """opens an url"""
     _stash = core.get_stash()
-    _stash("webviewer {u}".format(u=url))
+    _stash(f"webviewer {url}")

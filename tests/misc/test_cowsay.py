@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from stash.tests.stashtest import StashTestCase
 
 

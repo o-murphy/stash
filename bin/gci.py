@@ -1,11 +1,11 @@
-# coding: utf-8
+#!/usr/bin/env python
 """Interface to pythons built-in garbage collector
 
 Warning: this command may crash StaSh!
 Only use it if you know what you are doing!"""
 
-import gc
 import argparse
+import gc
 import sys
 
 _stash = globals()["_stash"]
@@ -42,19 +42,19 @@ def main():
             gcs = _stash.text_color("Enabled", "green")
         else:
             gcs = _stash.text_color("Disabled", "red")
-        sys.stdout.write("GC status:               {s}\n".format(s=gcs))
+        sys.stdout.write(f"GC status:               {gcs}\n")
         tracked = gc.get_objects()
         n = len(tracked)
-        sys.stdout.write("Tracked objects:         {n}\n".format(n=n))
+        sys.stdout.write(f"Tracked objects:         {n}\n")
         size = sum([sys.getsizeof(e) for e in tracked])
         del tracked  # this list may be big, better delete it
         size = _stash.libcore.sizeof_fmt(size)
-        sys.stdout.write("Size of tracked objects: {s} \n".format(s=size))
-        sys.stdout.write("Garbage:                 {n}\n".format(n=len(gc.garbage)))
+        sys.stdout.write(f"Size of tracked objects: {size} \n")
+        sys.stdout.write(f"Garbage:                 {len(gc.garbage)}\n")
         gsize = sum([sys.getsizeof(e) for e in gc.garbage])
         gsize = _stash.libcore.sizeof_fmt(gsize)
-        sys.stdout.write("Size of garbage:         {s} \n".format(s=gsize))
-        sys.stdout.write("Debug:                   {d}\n".format(d=gc.get_debug()))
+        sys.stdout.write(f"Size of garbage:         {gsize} \n")
+        sys.stdout.write(f"Debug:                   {gc.get_debug()}\n")
     elif ns.command == "threshold":
         if len(ns.args) == 0:
             sys.stdout.write(
@@ -80,7 +80,7 @@ def main():
             gc.set_threshold(*ts)
     elif ns.command == "debug":
         if len(ns.args) == 0:
-            sys.stdout.write("Debug: {d}\n".format(d=gc.get_debug()))
+            sys.stdout.write(f"Debug: {gc.get_debug()}\n")
         elif len(ns.args) == 1:
             try:
                 flag = int(ns.args[0])

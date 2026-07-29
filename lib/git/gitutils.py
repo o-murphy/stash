@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
-import sys
 import os
+
 import dulwich
-from dulwich import porcelain
 from dulwich.walk import Walker
 from gittle import Gittle
 
@@ -70,8 +68,8 @@ def find_revision_sha(repo, rev):
         if len(shalist) == 1:
             return shalist[0]
         elif len(shalist) > 1:
-            raise GitError("SHA {} is not unique".format(rev))
-        raise GitError("could not find rev {}".format(rev))
+            raise GitError(f"SHA {rev} is not unique")
+        raise GitError(f"could not find rev {rev}")
 
 
 def merge_base(repo, rev1, rev2):
@@ -115,7 +113,7 @@ def is_ancestor(repo, rev1, rev2):
     """return true if rev1 is an ancestor of rev2"""
     sha1 = find_revision_sha(repo, rev1)
     sha2 = find_revision_sha(repo, rev2)
-    return True if sha1 in merge_base(repo, sha1, sha2) else False
+    return sha1 in merge_base(repo, sha1, sha2)
 
 
 def can_ff(repo, oldrev, newrev):

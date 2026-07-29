@@ -1,15 +1,11 @@
 #!/usr/bin/env python
 
-import sys
-import os
-import re
-import json
 import argparse
-import time
-import pytz
+import json
+import os
+import sys
+
 import console
-from datetime import datetime, timedelta
-from difflib import unified_diff, ndiff
 
 
 def argue():
@@ -42,14 +38,12 @@ def ln(lhs, rhs, symbolic=False):
         os.symlink(lhs, rhs)
     else:
         os.link(lhs, rhs)
-    return
 
 
 def main():
     console.clear()
     args = argue()
     ln(args.lhs, args.rhs, args.symbolic)
-    return
 
 
 if __name__ == "__main__":

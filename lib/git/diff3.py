@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # ============================================================================
 # Copyright (C) 1988, 1989, 1992, 1993, 1994 Free Software Foundation, Inc.
 # Copyright (c) 2011-2012 University of Pennsylvania
@@ -106,10 +105,10 @@ def diff3(yourtext, origtext, theirtext):
             cmd = "A"
         else:
             cmd = "2"
-            for d in range(0, hi0 - lo0 + 1):
+            for d in range(hi0 - lo0 + 1):
                 (i0, i1) = (lo0 + d - 1, lo1 + d - 1)
-                ok0 = 0 <= i0 and i0 < len(yourtext)
-                ok1 = 0 <= i1 and i1 < len(theirtext)
+                ok0 = 0 <= i0 < len(yourtext)
+                ok1 = 0 <= i1 < len(theirtext)
                 if xor(ok0, ok1) or (ok0 and yourtext[i0] != theirtext[i1]):
                     cmd = "A"
                     break

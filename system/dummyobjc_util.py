@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
-
-
-class ObjCClass(object):
+class ObjCClass:
     def __init__(self, *args, **kwargs):
         pass
 
@@ -78,8 +75,8 @@ def on_main_thread(func):
     return func
 
 
-class ctypes(object):
-    class pythonapi(object):
+class ctypes:
+    class pythonapi:
         @staticmethod
         def PyThreadState_SetAsyncExc(
             tid,

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This module keeps track of the current MountManager.
 This can not be done in stashutils.mount_manager, because this would create some import problems.

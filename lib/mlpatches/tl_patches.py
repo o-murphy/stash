@@ -1,12 +1,12 @@
-# -*- coding: utf-8 -*-
 """patches for making some vars thread-local"""
 
-import threading
 import copy
+import threading
+
 from mlpatches import base
 
 
-class ThreadLocalVar(object):
+class ThreadLocalVar:
     """creates a proxy to a thread-local version of passee var."""
 
     # todo: maybe add lock?
@@ -49,7 +49,6 @@ class ThreadLocalVar(object):
 class ThreadLocalArgv(base.FunctionPatch):
     """Patches sys.argv to be thread-local."""
 
-    PY2 = True
     PY3 = True
     module = "sys"
     function = "argv"

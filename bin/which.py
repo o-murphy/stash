@@ -1,11 +1,9 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """Locate a command script in BIN_PATH. No output if command is not found."""
-
-from __future__ import print_function
 
 
 def main(command, fullname=False):
-    global _stash
+    global _stash  # noqa: PLW0602
     rt = globals()["_stash"].runtime
     try:
         filename = rt.find_script_file(command)

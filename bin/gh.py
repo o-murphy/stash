@@ -1,4 +1,4 @@
-# coding: utf-8
+#!/usr/bin/env python
 """
 Usage: gh <command> [<args>...]
        gh <command> (-h|--help)
@@ -13,12 +13,8 @@ For all commands, use gh <command> --help for more detailed help
 NOTE: assumes a keychain user/pass stored in 	keychainservice='stash.git.github.com', which is also the default from the git module.
 """
 
-from __future__ import print_function
 import os
-import sys
 from functools import wraps
-
-from six.moves import input
 
 _stash = globals()["_stash"]
 
@@ -27,17 +23,15 @@ try:
 except ImportError:
     print("Could not import 'github', installing it...")
     _stash("pip install pygithub")
-    import github
 try:
     import docopt
 except ImportError:
     print("Could not import 'docopt', installing it...")
     _stash("pip install docopt")
+import console
+import keychain
 from docopt import docopt
 from github import Github
-import keychain
-import console
-import inspect
 
 
 class GitHubRepoNotFoundError(Exception):
@@ -47,9 +41,8 @@ class GitHubRepoNotFoundError(Exception):
 def command(func):
     @wraps(func)
     def tmp(argv):
-        if len(argv) == 1:
-            if func.__name__ not in ["gh_list_keys"]:
-                argv.append("--help")
+        if len(argv) == 1 and func.__name__ not in ["gh_list_keys"]:
+            argv.append("--help")
         try:
             args = docopt(func.__doc__, argv=argv)
             return func(args)
@@ -73,7 +66,7 @@ def gh_fork(args):
         other_repo = g.get_repo(args["<repo>"])
         if other_repo:
             mine = user.create_fork(other_repo)
-            print("fork created: {}/{}".format(mine.owner.login, mine.name))
+            print(f"fork created: {mine.owner.login}/{mine.name}")
         else:
             pass
     finally:
@@ -102,7 +95,7 @@ def gh_create(args):
     }
     console.show_activity()
     try:
-        g, user = setup_gh()
+        _g, user = setup_gh()
         r = user.create_repo(args["<name>"], **kwargs)
         print("Created %s" % r.html_url)
     finally:
@@ -170,7 +163,7 @@ def gh_pull(args):
             kwargs["body"] = args["--body"] or ""
 
         kwargs["base"] = basebranch
-        kwargs["head"] = ":".join([headowner, headbranch])
+        kwargs["head"] = f"{headowner}:{headbranch}"
         pullreq = baserepo.create_pull(**kwargs)
 
         print("Created pull %s" % pullreq.html_url)
@@ -192,9 +185,9 @@ def gh_list_keys(args):
 
     List keys
     """
-    g, u = setup_gh()
+    _g, u = setup_gh()
     for key in u.get_keys():
-        print("{}:\n {}\n".format(key.title, key.key))
+        print(f"{key.title}:\n {key.key}\n")
 
 
 @command
@@ -225,7 +218,7 @@ def gh_create_key(args):
         args["<public_key_path>"] += ".pub"
     if not os.path.exists(args["<public_key_path>"]):
         raise Exception("Public Key file not found!")
-    g, u = setup_gh()
+    _g, u = setup_gh()
     with open(args["<public_key_path>"]) as pubkey:
         u.create_key(title, pubkey.read())
 

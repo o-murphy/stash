@@ -1,18 +1,15 @@
-# -*- coding: utf-8 -*-
 """The FSI for zipfiles"""
 
-import zipfile
+import datetime
 import os
+import shutil
+import stat
 import tempfile
 import time
-import shutil
-import datetime
-import stat
-
+import zipfile
 from io import BytesIO
 
-from stashutils.fsi import base
-from stashutils.fsi import errors
+from stashutils.fsi import base, errors
 
 # TODO: check filename bug when writing
 
@@ -47,11 +44,11 @@ class ZipfileFSI(base.BaseFSI):
                 dirs.append(dirpath)
         return dirs
 
-    def _update(self, remove=[]):
+    def _update(self, remove=None):
         """create a new zipfile with some changes"""
-        nzfp = os.path.join(
-            tempfile.gettempdir(), "tempzip_{t}.zip".format(t=time.time())
-        )
+        if remove is None:
+            remove = []
+        nzfp = os.path.join(tempfile.gettempdir(), f"tempzip_{time.time()}.zip")
         op = self.zf.fp.name
         pswd = self.zf.pwd
         comment = self.zf.comment
@@ -148,7 +145,7 @@ class ZipfileFSI(base.BaseFSI):
 
     def stat(self, name):
         ap = self.abspath(name)
-        self.log("stat: {ap}\n".format(ap=ap))
+        self.log(f"stat: {ap}\n")
         isdir = self.isdir(name)
         isfile = self.isfile(name)
         if not (isdir or isfile):
@@ -161,8 +158,12 @@ class ZipfileFSI(base.BaseFSI):
             zipinfo = self.zf.getinfo(ap)
             size = zipinfo.file_size
             timestamp = zipinfo.date_time
-            dt = datetime.datetime(*timestamp)
-            mtime = (dt - datetime.datetime(1970, 1, 1)).total_seconds()
+            # ZIP timestamps have no timezone (per the format spec); treat
+            # naively rather than assume a tz that isn't actually recorded.
+            dt = datetime.datetime(*timestamp)  # noqa: DTZ001
+            mtime = (
+                dt - datetime.datetime(1970, 1, 1)  # noqa: DTZ001
+            ).total_seconds()
         type_ = stat.S_IFREG if isfile else stat.S_IFDIR
         mode = base.calc_mode(type=type_)
         self.log("stat return\n")
@@ -170,7 +171,7 @@ class ZipfileFSI(base.BaseFSI):
 
     def open(self, name, mode="r", buffering=0):
         ap = self.abspath(name)
-        self.log("open {ap} with mode {m}\n".format(ap=ap, m=mode))
+        self.log(f"open {ap} with mode {mode}\n")
         if "r" in mode:
             try:
                 reader = ZipReader(self, ap, mode, buffering)
@@ -186,7 +187,7 @@ class ZipfileFSI(base.BaseFSI):
             raise errors.OperationFailure("Unsupported mode!")
 
 
-class ZipWriter(object):
+class ZipWriter:
     """utility class used for writing to a ZipFile."""
 
     def __init__(self, root, fp, mode, buffering):

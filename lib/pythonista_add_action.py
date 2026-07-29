@@ -1,4 +1,3 @@
-# coding: utf-8
 """
 Manipulate action (wrench) menu
 example:
@@ -28,7 +27,7 @@ def add_action(scriptName, iconName="python", iconColor="", title=""):
     entry = {
         key: kwargs[key]
         for key in ("scriptName", "iconName", "iconColor", "title", "arguments")
-        if key in kwargs and kwargs[key]
+        if kwargs.get(key)
     }
     editoractions = get_actions()
     editoractions.append(ns(entry))

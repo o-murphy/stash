@@ -1,39 +1,38 @@
-# coding: utf-8
 from time import time
-
-import six
 
 import ui
 from objc_util import (
-    on_main_thread,
+    ObjCClass,
+    ObjCInstance,
     ObjCInstanceMethod,
     UIColor,
     create_objc_class,
-    ObjCClass,
-    ObjCInstance,
     ns,
+    on_main_thread,
 )
 
-from ..shcommon import ON_IPAD, ON_IOS_8, sh_delay
 from ..shcommon import (
+    CTRL_KEY_FLAG,
     K_CC,
     K_CD,
-    K_HUP,
-    K_HDN,
     K_CU,
-    K_TAB,
-    K_HIST,
     K_CZ,
+    K_HDN,
+    K_HIST,
+    K_HUP,
     K_KB,
-    CTRL_KEY_FLAG,
+    K_TAB,
+    ON_IOS_8,
+    ON_IPAD,
+    sh_delay,
 )
 from ..shscreens import DEFAULT_CHAR, ShChar
-from .base import ShBaseUI, ShBaseTerminal, ShBaseSequentialRenderer
+from .base import ShBaseSequentialRenderer, ShBaseTerminal, ShBaseUI
 
 try:
-    from objc_util import *  # noqa: F403
+    from objc_util import *
 except ImportError:
-    from .dummyobjc_util import *  # noqa: F403
+    from .dummyobjc_util import *
 
 
 NSMutableAttributedString = ObjCClass("NSMutableAttributedString")
@@ -67,7 +66,7 @@ class ShVk(ui.View):
         self.flex = flex
         self.name = name
         self.sv = ui.ScrollView(name, flex="wh")
-        super(ShVk, self).add_subview(self.sv)
+        super().add_subview(self.sv)
         self.sv.delegate = self
         self.dx = 0
         self.SCROLL_PER_CHAR = 20.0  # Number of pixels to scroll to move 1 character
@@ -571,7 +570,7 @@ class ShTerminal(ShBaseTerminal):
     @on_main_thread
     def background_color(self, value):
         self._background_color = value
-        r, g, b, a = ui.parse_color(value)
+        r, g, b, _a = ui.parse_color(value)
         self.tvo.setBackgroundColor_(UIColor.colorWithRed_green_blue_alpha_(r, g, b, 1))
 
     @property
@@ -606,7 +605,7 @@ class ShTerminal(ShBaseTerminal):
     @on_main_thread
     def text_color(self, value):
         self._text_color = value
-        r, g, b, a = ui.parse_color(value)
+        r, g, b, _a = ui.parse_color(value)
         self.tvo.setTextColor_(UIColor.colorWithRed_green_blue_alpha_(r, g, b, 1))
 
     @property
@@ -617,12 +616,12 @@ class ShTerminal(ShBaseTerminal):
     @on_main_thread
     def tint_color(self, value):
         self._tint_color = value
-        r, g, b, a = ui.parse_color(value)
+        r, g, b, _a = ui.parse_color(value)
         self.tvo.setTintColor_(UIColor.colorWithRed_green_blue_alpha_(r, g, b, 1))
 
     @property
     def text(self):
-        return six.text_type(self.tvo.text())
+        return str(self.tvo.text())
 
     @text.setter
     @on_main_thread
@@ -915,11 +914,11 @@ class ShSequentialRenderer(ShBaseSequentialRenderer):
                 location = idx
                 prev_char = curr_char
 
-            if idx == len(chars) - 1:  # last char
-                if not ShChar.same_style(prev_char, DEFAULT_CHAR):
-                    attributed_text.setAttributes_range_(
-                        self._build_attributes(prev_char), (location, length)
-                    )
+            # last char
+            if idx == len(chars) - 1 and not ShChar.same_style(prev_char, DEFAULT_CHAR):
+                attributed_text.setAttributes_range_(
+                    self._build_attributes(prev_char), (location, length)
+                )
 
         return attributed_text
 

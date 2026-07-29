@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """
 Generates RSA/DSA SSH Keys.
 
@@ -11,11 +11,18 @@ usage:
     [-f] - output file name. default: id_ssh_key
 """
 
-from __future__ import print_function
+import argparse
 import os
 import sys
-import argparse
+
+# monkeypatch for paramiko and Crypto.Random
+# global mlpatches.time_patches.CLOCK_PATCH can be disabled
+import time
+
 import paramiko
+
+time.clock = time.perf_counter
+
 
 SSH_DIRS = [
     os.path.expanduser("~/.ssh"),

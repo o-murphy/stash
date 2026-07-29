@@ -1,11 +1,9 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """Sort standard input or given files to standard output"""
 
-from __future__ import print_function
-import os
-import sys
-import fileinput
 import argparse
+import fileinput
+import sys
 
 
 def main(args):
@@ -30,7 +28,7 @@ def main(args):
     fileinput.close()  # in case it is not closed
     try:
         lines = None
-        for line in fileinput.input(ns.files, openhook=fileinput.hook_encoded("utf-8")):
+        for line in fileinput.input(ns.files, encoding="utf-8"):
             if fileinput.isfirstline():
                 _print(lines)
                 lines = []

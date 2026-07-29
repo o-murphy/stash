@@ -1,12 +1,10 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """Print the first 10 lines of the given files."""
 
-from __future__ import print_function
-
 import argparse
+import fileinput
 import string
 import sys
-import fileinput
 
 
 def filter_non_printable(s):
@@ -78,7 +76,7 @@ def main(args):
                     print(header_fmt.format(fname), end="")
 
             fileinput.close()
-            inp = fileinput.input(fname, openhook=fileinput.hook_encoded("utf-8"))
+            inp = fileinput.input(fname, encoding="utf-8")
             if ns.lines >= 0:
                 buf = []
                 for i, line in enumerate(inp):
@@ -89,9 +87,7 @@ def main(args):
                     print(line, end="")
             else:
                 buf = []
-                for line in fileinput.input(
-                    inp, openhook=fileinput.hook_encoded("utf-8")
-                ):
+                for line in fileinput.input(inp, encoding="utf-8"):
                     buf.append(line)
                     if len(buf) > -ns.lines:
                         del buf[0]

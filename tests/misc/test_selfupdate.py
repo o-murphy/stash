@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """tests for the selfupdate command."""
 
 from stash.tests.stashtest import StashTestCase, requires_network

@@ -1,17 +1,16 @@
-# coding: utf-8
+#!/usr/bin/env python
 """easily work with multiple filesystems (e.g. local and FTP) synchronously"""
 
 # the name refers to midnight-commander, but this will probably
 # never be a true counterpart
-import os
-import shutil
 import cmd
+import os
+import shlex
+import shutil
 import sys
 import tempfile
-import shlex
 
-from stashutils.fsi.errors import OperationFailure, IsDir, IsFile
-from stashutils.fsi.errors import AlreadyExists
+from stashutils.fsi.errors import AlreadyExists, IsDir, IsFile, OperationFailure
 from stashutils.fsi.interfaces import INTERFACES
 from stashutils.fsi.local import LocalFSI
 
@@ -103,12 +102,12 @@ class McCmd(cmd.Cmd):
                 continue
             i = self.FSIs[k]
             name = i.repr()
-            self.stdout.write("{k}: {n}\n".format(k=k, n=name))
+            self.stdout.write(f"{k}: {name}\n")
 
     def do_exit(self, cmd=""):
         """exit: quits the script."""
         self.stdout.write("closing interfaces... ")
-        for k in self.FSIs.keys():
+        for k in self.FSIs:
             try:
                 self.FSIs[k].close()
             except:
@@ -145,14 +144,14 @@ class McCmd(cmd.Cmd):
         try:
             state = fsi.connect(*args_to_pass)
         except OperationFailure as e:
-            self.stdout.write(Text("Error: {e}!\n".format(e=e.message), "red"))
+            self.stdout.write(Text(f"Error: {e.message}!\n", "red"))
             return
         if state is True:
             self.FSIs[ID] = fsi
             self.stdout.write(Text("Done", "green"))
             self.stdout.write(".\n")
         elif isinstance(state, str):
-            self.stdout.write(Text("Error: {e}!\n".format(e=state), "red"))
+            self.stdout.write(Text(f"Error: {state}!\n", "red"))
         else:
             self.stdout.write(
                 Text("Error: cannot interpret return-Value of connect()!\n", "red")
@@ -178,9 +177,7 @@ class McCmd(cmd.Cmd):
             self.FSIs[ID].close()
         except OperationFailure as e:
             m = e.message
-            self.stdout.write(
-                Text("Error closing Interface: {m}!\n".format(m=m), "red")
-            )
+            self.stdout.write(Text(f"Error closing Interface: {m}!\n", "red"))
         del self.FSIs[ID]
         self.stdout.write(Text("Interface closed.\n", "green"))
 
@@ -193,7 +190,7 @@ class McCmd(cmd.Cmd):
             content = p.read()
             code = p.close()
             self.stdout.write(content + "\n")
-            self.stdout.write(Text("Exit status: {s}\n".format(s=code), "yellow"))
+            self.stdout.write(Text(f"Exit status: {code}\n", "yellow"))
 
     def do_cd(self, command):
         """cd <interface> <dirname>: change path of 'interface' to 'dirname'."""
@@ -216,7 +213,7 @@ class McCmd(cmd.Cmd):
         except IsFile:
             self.stdout.write(Text("Error: dirname does not refer to a dir!\n", "red"))
         except OperationFailure as e:
-            self.stdout.write(Text("Error: {m}\n".format(m=e.message), "red"))
+            self.stdout.write(Text(f"Error: {e.message}\n", "red"))
 
     def do_path(self, command):
         """path <interface>: shows current path of 'interface'."""
@@ -226,7 +223,7 @@ class McCmd(cmd.Cmd):
         try:
             self.stdout.write(fsi.get_path() + "\n")
         except OperationFailure as e:
-            self.stdout.write(Text("Error: {m}\n".format(m=e.message), "red"))
+            self.stdout.write(Text(f"Error: {e.message}\n", "red"))
 
     do_cwd = do_pwd = do_path
 
@@ -238,7 +235,7 @@ class McCmd(cmd.Cmd):
         try:
             content = fsi.listdir()
         except OperationFailure as e:
-            self.stdout.write(Text("Error: {m}\n".format(m=e.message), "red"))
+            self.stdout.write(Text(f"Error: {e.message}\n", "red"))
         else:
             self.stdout.write("  " + "\n  ".join(content) + "\n")
 
@@ -253,7 +250,7 @@ class McCmd(cmd.Cmd):
         try:
             fsi.remove(name)
         except OperationFailure as e:
-            self.stdout.write(Text("Error: {m}\n".format(m=e.message), "red"))
+            self.stdout.write(Text(f"Error: {e.message}\n", "red"))
         else:
             self.stdout.write(Text("Done", "green"))
             self.stdout.write(".\n")
@@ -269,7 +266,7 @@ class McCmd(cmd.Cmd):
         try:
             fsi.mkdir(name)
         except OperationFailure as e:
-            self.stdout.write(Text("Error: {m}\n".format(m=e.message), "red"))
+            self.stdout.write(Text(f"Error: {e.message}\n", "red"))
         else:
             self.stdout.write(Text("Done", "green"))
             self.stdout.write(".\n")
@@ -293,7 +290,7 @@ class McCmd(cmd.Cmd):
         isfile = rfsi.isfile(rfp)
         isdir = rfsi.isdir(rfp)
         if isfile:
-            self.stdout.write("Copying file '{n}'...\n".format(n=rfp))
+            self.stdout.write(f"Copying file '{rfp}'...\n")
             try:
                 self.stdout.write("   Opening infile... ")
                 rf = rfsi.open(rfp, "rb")
@@ -313,7 +310,7 @@ class McCmd(cmd.Cmd):
                 self.stdout.write(Text("Error: expected a filepath!\n", "red"))
                 return
             except OperationFailure as e:
-                self.stdout.write(Text("Error: {m}!\n".format(m=e.message), "red"))
+                self.stdout.write(Text(f"Error: {e.message}!\n", "red"))
                 return
             finally:
                 self.stdout.write("   Closing infile... ")
@@ -322,14 +319,14 @@ class McCmd(cmd.Cmd):
                     self.stdout.write(Text("Done", "green"))
                     self.stdout.write(".\n")
                 except Exception as e:
-                    self.stdout.write(Text("Error: {m}!\n".format(m=e.message), "red"))
+                    self.stdout.write(Text(f"Error: {e.message}!\n", "red"))
                 self.stdout.write("   Closing outfile... ")
                 try:
                     wf.close()
                     self.stdout.write(Text("Done", "green"))
                     self.stdout.write(".\n")
                 except Exception as e:
-                    self.stdout.write(Text("Error: {m}!\n".format(m=e.message), "red"))
+                    self.stdout.write(Text(f"Error: {e.message}!\n", "red"))
                 self.stdout.write(Text("Done", "green"))
                 self.stdout.write(".\n")
         elif isdir:
@@ -337,10 +334,10 @@ class McCmd(cmd.Cmd):
             cwp = wfsi.get_path()
             rfsi.cd(rfp)
             if not (wfp in wfsi.listdir() or wfp == "/"):
-                self.stdout.write("Creating dir '{n}'... ".format(n=wfp))
+                self.stdout.write(f"Creating dir '{wfp}'... ")
                 try:
                     wfsi.mkdir(wfp)
-                except AlreadyExists as e:
+                except AlreadyExists:
                     pass
                 self.stdout.write(Text("Done", "green"))
                 self.stdout.write(".\n")
@@ -348,12 +345,10 @@ class McCmd(cmd.Cmd):
             try:
                 content = rfsi.listdir()
                 for fn in content:
-                    subcommand = '{rfi} "{name}" {wfi} "{name}"'.format(
-                        rfi=rfi, name=fn, wfi=wfi
-                    )
+                    subcommand = f'{rfi} "{fn}" {wfi} "{fn}"'
                     self.do_cp(subcommand)
             except OperationFailure as e:
-                self.stdout.write(Text("Error: {e}!\n".format(e=e.message), "red"))
+                self.stdout.write(Text(f"Error: {e.message}!\n", "red"))
                 return
             finally:
                 rfsi.cd(crp)
@@ -383,7 +378,7 @@ class McCmd(cmd.Cmd):
         isdir = rfsi.isdir(rfp)
         isfile = rfsi.isfile(rfp)
         if isfile:
-            self.stdout.write("Moving file '{n}'...\n".format(n=rfp))
+            self.stdout.write(f"Moving file '{rfp}'...\n")
             try:
                 self.stdout.write("   Opening file to read... ")
                 rf = rfsi.open(rfp, "rb")
@@ -403,7 +398,7 @@ class McCmd(cmd.Cmd):
                 self.stdout.write(Text("Error: expected a filepath!\n", "red"))
                 return
             except OperationFailure as e:
-                self.stdout.write(Text("Error: {m}!\n".format(m=e.message), "red"))
+                self.stdout.write(Text(f"Error: {e.message}!\n", "red"))
                 return
             finally:
                 self.stdout.write("   Closing infile... ")
@@ -412,20 +407,20 @@ class McCmd(cmd.Cmd):
                     self.stdout.write(Text("Done", "green"))
                     self.stdout.write(".\n")
                 except Exception as e:
-                    self.stdout.write(Text("Error: {m}!\n".format(m=e.message), "red"))
+                    self.stdout.write(Text(f"Error: {e.message}!\n", "red"))
                 self.stdout.write("   Closing outfile... ")
                 try:
                     wf.close()
                     self.stdout.write(Text("Done", "green"))
                     self.stdout.write(".\n")
                 except Exception as e:
-                    self.stdout.write(Text("Error: {m}!\n".format(m=e.message), "red"))
+                    self.stdout.write(Text(f"Error: {e.message}!\n", "red"))
                     return
                 self.stdout.write("   Deleting Original... ")
                 try:
                     rfsi.remove(rfp)
                 except OperationFailure as e:
-                    self.stdout.write(Text("Error: {m}!\n".format(m=e.message), "red"))
+                    self.stdout.write(Text(f"Error: {e.message}!\n", "red"))
                 else:
                     self.stdout.write(Text("Done", "green"))
                     self.stdout.write(".\n")
@@ -436,7 +431,7 @@ class McCmd(cmd.Cmd):
             cwp = wfsi.get_path()
             rfsi.cd(rfp)
             if not (wfp in wfsi.listdir() or wfp == "/"):
-                self.stdout.write("Creating dir '{n}'... ".format(n=wfp))
+                self.stdout.write(f"Creating dir '{wfp}'... ")
                 wfsi.mkdir(wfp)
                 self.stdout.write(Text("Done", "green"))
                 self.stdout.write(".\n")
@@ -444,14 +439,12 @@ class McCmd(cmd.Cmd):
             try:
                 content = rfsi.listdir()
                 for fn in content:
-                    subcommand = '{rfi} "{name}" {wfi} "{name}"'.format(
-                        rfi=rfi, name=fn, wfi=wfi
-                    )
+                    subcommand = f'{rfi} "{fn}" {wfi} "{fn}"'
                     self.do_mv(subcommand)
                 rfsi.cd(crp)
                 rfsi.remove(rfp)
             except OperationFailure as e:
-                self.stdout.write(Text("Error: {e}!\n".format(e=e.message), "red"))
+                self.stdout.write(Text(f"Error: {e.message}!\n", "red"))
                 return
             finally:
                 rfsi.cd(crp)
@@ -477,7 +470,7 @@ class McCmd(cmd.Cmd):
             else:
                 self.stdout.write(Text("Error: Unknown read-mode!\n", "red"))
                 return
-            name, binary = args[0], binary
+            name = args[0]
         elif len(args) not in (1, 2):
             self.stdout.write(Text("Error: invalid argument count!\n", "red"))
             return
@@ -490,14 +483,14 @@ class McCmd(cmd.Cmd):
         except IsDir:
             self.stdout.write(Text("Error: expected a filepath!\n", "red"))
         except OperationFailure as e:
-            self.stdout.write(Text("Error: {m}\n".format(m=e.message), "red"))
+            self.stdout.write(Text(f"Error: {e.message}\n", "red"))
         else:
             self.stdout.write(Text("Done", "green"))
             self.stdout.write(".\n")
             if not binary:
                 content = repr(content)[1:-1]
             self.stdout.write(Text("=" * 25, "yellow"))
-            self.stdout.write("\n{c}\n".format(c=content))
+            self.stdout.write(f"\n{content}\n")
             self.stdout.write(Text("=" * 25, "yellow"))
             self.stdout.write("\n")
         finally:
@@ -564,10 +557,10 @@ class McCmd(cmd.Cmd):
                 self.stdout.write(".\n")
             if cd_path is None:
                 cd_path = os.path.join(localpath, os.listdir(localpath)[0])
-            self.do_shell('cd "{p}"'.format(p=cd_path))
+            self.do_shell(f'cd "{cd_path}"')
             self.do_shell(shellcommand)
         except Exception as e:
-            self.stdout.write(Text("Error: {e}!\n".format(e=e.message), "red"))
+            self.stdout.write(Text(f"Error: {e.message}!\n", "red"))
             return
         else:
             try:
@@ -575,7 +568,7 @@ class McCmd(cmd.Cmd):
                     self.stdout.write("Checking for content modification... ")
                     moded = modified(localpath, prev=oldstate)
                     self.stdout.write(Text("Done", "green"))
-                    self.stdout.write(".\nContent modified: {m}\n".format(m=moded))
+                    self.stdout.write(f".\nContent modified: {moded}\n")
                     if moded:
                         self.stdout.write("Copying modifified content... \n")
                         if lfp == "exec":
@@ -584,8 +577,7 @@ class McCmd(cmd.Cmd):
                             tp = remotepath
                         if os.path.isfile(lfp):
                             if tp != "/":
-                                if tp.endswith("/"):
-                                    tp = tp[:-1]
+                                tp = tp.removesuffix("/")
                                 tp = "/".join(tp.split("/")[:-1])
                             lfp = lfsi.get_path()
                             if lfp.endswith("/"):
@@ -599,10 +591,10 @@ class McCmd(cmd.Cmd):
                 else:
                     pass
             except Exception as e:
-                self.stdout.write(Text("Error: {m}!\n".format(m=e.message), "red"))
+                self.stdout.write(Text(f"Error: {e.message}!\n", "red"))
         finally:
             self.stdout.write("Cleaning up... ")
-            self.do_shell('cd "{p}"'.format(p=op))
+            self.do_shell(f'cd "{op}"')
             try:
                 shutil.rmtree(localpath)
             except:
@@ -621,12 +613,12 @@ class McCmd(cmd.Cmd):
         if i not in self.FSIs:
             self.stdout.write(Text("Error: Interface not found!\n", "red"))
             return None, None
-        if ret == str:
+        if ret is str:
             if len(args) > 1:
                 args = " ".join(args[1:])
             else:
                 args = ""
-        elif ret == tuple:
+        elif ret is tuple:
             args = args[1:]
         else:
             raise ValueError("Unknown return type!")

@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 """version utilities"""
 
-import re
 import operator
+import re
 
 # release type identifier -> release type priority (higher == better)
 RELEASE_TYPE_PRIORITIES = {
@@ -125,7 +124,7 @@ def sort_versions(versionlist):
     )
 
 
-class Version(object):
+class Version:
     """
     This class represents a version. It is mainly used for version comparsion.
     """
@@ -271,7 +270,7 @@ class Version(object):
         return version
 
 
-class VersionSpecifier(object):
+class VersionSpecifier:
     """
     This class is to represent the versions of a requirement, e.g. pyte==0.4.10.
     """
@@ -316,7 +315,7 @@ class VersionSpecifier(object):
             # ignore
             return None, None, []
         PAREN = lambda x: "(" + x + ")"
-        version_cmp = PAREN("?:" + "|".join(("<=", "<", "!=", ">=", ">", "~=", "==")))
+        version_cmp = PAREN("?:" + "<=|<|!=|>=|>|~=|==")
         name_end_res = re.search(version_cmp, requirement)
         if name_end_res is None:
             if "[" in requirement:

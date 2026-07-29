@@ -1,5 +1,3 @@
-# coding=utf-8
-
 from stash.tests.stashtest import StashTestCase
 
 
@@ -8,7 +6,7 @@ class RuntimeTests(StashTestCase):
 
     def test_03(self):
         cmp_str = r"""[stash]$ x y
-A is{0}
+A is{}
 A is 8
 bin
 [stash]$ """.format(" ")
@@ -41,6 +39,7 @@ l1=ls -1
 la=ls -a
 ll=ls -la
 paste=pbpaste
+python=python3
 unmount=umount
 
 AA is{0}
@@ -50,6 +49,7 @@ help=man
 la=ls -a
 ll=ls -la
 paste=pbpaste
+python=python3
 unmount=umount
 
 
@@ -62,6 +62,7 @@ l1=ls -1
 la=ls -a
 ll=ls -la
 paste=pbpaste
+python=python3
 unmount=umount
 
 AA is sourced
@@ -72,6 +73,7 @@ l1=ls -1
 la=ls -a
 ll=ls -la
 paste=pbpaste
+python=python3
 unmount=umount
 
 [stash]$ """.format(" ")
@@ -79,17 +81,17 @@ unmount=umount
 
     def test_07(self):
         cmp_str = r"""[stash]$ A is 999
-A is{0}
+A is{}
 [stash]$ """.format(" ")
         self.do_test("test07.sh", cmp_str, ensure_undefined=("A",))
 
     def test_08(self):
-        cmp_str = r"""[stash]$ A is{0}
+        cmp_str = r"""[stash]$ A is{}
 [stash]$ """.format(" ")
         self.do_test("test08.sh", cmp_str, ensure_undefined=("A",))
 
     def test_09(self):
-        cmp_str = r"""[stash]$ A is{0}
+        cmp_str = r"""[stash]$ A is{}
 [stash]$ """.format(" ")
         self.do_test("test09.sh", cmp_str, ensure_undefined=("A",))
 

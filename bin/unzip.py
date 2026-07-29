@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """Extract a zip archive into a directory."""
 
-from __future__ import print_function
+import argparse
 import os
 import sys
 import zipfile
-import argparse
 
 
 def main(args):

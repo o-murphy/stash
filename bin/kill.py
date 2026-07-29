@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """
 Terminate a running job.
 """
 
-from __future__ import print_function
-import sys
 import argparse
+import sys
 import time
 
 
@@ -20,13 +19,13 @@ def main(args):
 
     for job_id in ns.job_ids:
         if job_id in _stash.runtime.worker_registry:
-            print("killing job {} ...".format(job_id))
+            print(f"killing job {job_id} ...")
             worker = _stash.runtime.worker_registry.get_worker(job_id)
             worker.kill()
             time.sleep(1)
 
         else:
-            print("error: no such job with id: {}".format(job_id))
+            print(f"error: no such job with id: {job_id}")
             break
 
 

@@ -1,8 +1,9 @@
-# coding: utf-8
+#!/usr/bin/env python
 """Opens the given URL in the webbrowser or an App."""
 
 import argparse
 import webbrowser
+
 import ui
 from objc_util import on_main_thread
 

@@ -1,12 +1,11 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """Tip of the day"""
 
-from __future__ import print_function
-import os
-import sys
-import json
-import random
 import argparse
+import json
+import os
+import random
+import sys
 
 
 def main(args):

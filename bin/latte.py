@@ -1,6 +1,6 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 # A package manager meant for Pythonista, built on StaSh.
-from __future__ import print_function
+
 
 import argparse
 import sys
@@ -55,7 +55,7 @@ def Cyan(text):
     return stansi.fore_cyan + text + stansi.fore_end
 
 
-class SWConfig(object):  # Parser for the config files such as the repository listing.
+class SWConfig:  # Parser for the config files such as the repository listing.
     def __init__(self, content):
         self.data = {}
         for line in content.splitlines():
@@ -212,7 +212,7 @@ def main(sargs):
             content = opened.read()
             opened.close()
             as_config = SWConfig(content)
-            for repo in as_config.keys():
+            for repo in as_config:
                 print(Cyan(repo) + ": " + Green(as_config[repo]))
     else:
         print(Red("ERROR") + ": Unknown command '" + args.method + "'!")

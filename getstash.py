@@ -1,11 +1,10 @@
-from __future__ import print_function
 import os
 import shutil
 import sys
-import requests
-import zipfile
 import time
+import zipfile
 
+import requests
 
 DEFAULT_REPO = "ywangd"
 DEFAULT_BRANCH = "master"
@@ -41,8 +40,6 @@ class DownloadError(Exception):
     Exception indicating a problem with a download.
     """
 
-    pass
-
 
 def download_stash(
     repo=DEFAULT_REPO, branch=DEFAULT_BRANCH, outpath=TEMP_ZIPFILE, verbose=False
@@ -58,7 +55,7 @@ def download_stash(
     """
     url = URL_TEMPLATE.format(repo, branch)
     if verbose:
-        print("Downloading {} ...".format(url))
+        print(f"Downloading {url} ...")
     r = requests.get(url, stream=True)
     file_size = r.headers.get("Content-Length")
     if file_size is not None:
@@ -66,8 +63,7 @@ def download_stash(
 
     with open(outpath, "wb") as outs:
         block_sz = 8192
-        for chunk in r.iter_content(block_sz):
-            outs.write(chunk)
+        outs.writelines(r.iter_content(block_sz))
 
 
 def install_pti(url=URL_PTI, outpath=DEFAULT_PTI_PATH, verbose=False):
@@ -81,7 +77,7 @@ def install_pti(url=URL_PTI, outpath=DEFAULT_PTI_PATH, verbose=False):
     :type verbose: bool
     """
     if verbose:
-        print("Downloading {} to {}".format(url, outpath))
+        print(f"Downloading {url} to {outpath}")
     r = requests.get(url)
     with open(outpath, "w") as outs:
         outs.write(r.text)
@@ -195,12 +191,10 @@ def pythonista_install(
         try:
             download_stash(repo=repo, branch=branch, outpath=zp, verbose=verbose)
         except:
-            raise DownloadError(
-                "Unable to download StaSh from {}:{}".format(repo, branch)
-            )
+            raise DownloadError(f"Unable to download StaSh from {repo}:{branch}")
     else:
         if verbose:
-            print("Using '{}' as source.".format(zippath))
+            print(f"Using '{zippath}' as source.")
         zp = zippath
     try:
         # install StaSh
@@ -248,12 +242,10 @@ def setup_install(
         try:
             download_stash(repo=repo, branch=branch, outpath=zp, verbose=verbose)
         except:
-            raise DownloadError(
-                "Unable to download StaSh from {}:{}".format(repo, branch)
-            )
+            raise DownloadError(f"Unable to download StaSh from {repo}:{branch}")
     else:
         zp = zippath
-    tp = os.path.join(TMPDIR, "getstash-{}".format(time.time()))
+    tp = os.path.join(TMPDIR, f"getstash-{time.time()}")
     unzip_into(zp, tp, verbose=verbose)
     # run setup.py
     os.chdir(tp)
@@ -270,13 +262,24 @@ def setup_install(
         "__name__": "__main__",
         "__file__": fp,
     }
-    with open(fp, "rU") as fin:
+    # setup.py pulls in setuptools, which patches `distutils` to redirect to
+    # its own vendored copy. If anything earlier in this process already
+    # imported the stdlib distutils, that patch can be left in an
+    # inconsistent state (AssertionError/KeyError from _distutils_hack on
+    # Python <3.12). Re-sync it right before running setup.py.
+    try:
+        import _distutils_hack
+
+        _distutils_hack.ensure_local_distutils()
+    except ImportError:
+        pass
+    with open(fp, "r") as fin:
         content = fin.read()
         code = compile(content, fp, "exec", dont_inherit=True)
         exec(code, ns, ns)
 
 
-def main(defs={}):
+def main(defs=None):
     """
     The main function.
     :param defs: namespace which may contain additional parameters
@@ -286,6 +289,8 @@ def main(defs={}):
     # These arguments will not be defined when StaSh is normally installed,
     # but both selfupdate and tests may specify different values
     # i would like to use argparse here, but this must be compatible with older StaSh versions
+    if defs is None:
+        defs = {}
     repo = defs.get("_owner", DEFAULT_REPO)  # owner of repo
     branch = defs.get("_br", DEFAULT_BRANCH)  # target branch
     is_update = "_IS_UPDATE" in defs  # True if update
@@ -329,7 +334,7 @@ def main(defs={}):
             verbose=True,
         )
     else:
-        raise ValueError("Invalid install type: {}".format(dist))
+        raise ValueError(f"Invalid install type: {dist}")
 
     if not is_update:
         # print additional instructions

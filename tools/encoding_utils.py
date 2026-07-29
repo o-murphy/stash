@@ -1,9 +1,7 @@
-#!python2
-# -*- coding: utf-8 -*-
 """add encoding lines at the start of the files"""
 
-import os
 import argparse
+import os
 import re
 import sys
 
@@ -52,9 +50,7 @@ def get_encoding_of_file(p):
     """
     with open(p, "r") as fin:
         lines = fin.readlines()
-        i = 0
-        for line in lines:
-            i += 1
+        for i, line in enumerate(lines):
             if i > 2:
                 # encoding must be specified in the first two lines
                 return None
@@ -95,7 +91,7 @@ def show_file_encoding(p):
         encs = "---"
     else:
         encs = enc
-    print("{fn:20} {enc}".format(fn=os.path.relpath(p), enc=encs))
+    print(f"{os.path.relpath(p):20} {encs}")
 
 
 def set_all_encodings(p, encoding, recursive=False, ignore_nonpy=False, force=False):
@@ -129,7 +125,7 @@ def set_all_encodings(p, encoding, recursive=False, ignore_nonpy=False, force=Fa
                 continue
             if (get_encoding_of_file(fp) is not None) and not force:
                 # skip
-                print("Skipping '{}', it already has an encoding.".format(fp))
+                print(f"Skipping '{fp}', it already has an encoding.")
                 continue
             set_file_encoding(fp, encoding)
 
@@ -145,7 +141,7 @@ def set_file_encoding(p, encoding):
     fe = get_encoding_of_file(p)
     if fe is None:
         # we can add the encoding
-        to_add = "# -*- coding: {} -*-\n".format(encoding)
+        to_add = f"# -*- coding: {encoding} -*-\n"
         with open(p, "r") as fin:
             lines = fin.readlines()
         if len(lines) == 0:
@@ -161,7 +157,7 @@ def set_file_encoding(p, encoding):
             fout.write("".join(lines))
     else:
         # we need to overwrite the encoding
-        to_add = "# -*- coding: {} -*-\n".format(encoding)
+        to_add = f"# -*- coding: {encoding} -*-\n"
         with open(p, "r") as fin:
             lines = fin.readlines()
         was_set = False
@@ -203,7 +199,7 @@ def remove_all_encodings(p, recursive=False, ignore_nonpy=True):
                 continue
             if get_encoding_of_file(fp) is None:
                 # skip
-                print("Skipping '{}', it has no encoding.".format(fp))
+                print(f"Skipping '{fp}', it has no encoding.")
                 continue
             remove_file_encoding(fp)
 
@@ -221,7 +217,7 @@ def remove_file_encoding(path):
         elif len(lines) >= 2 and is_encoding_line(lines[1]):
             lines.pop(1)
         else:
-            print("No encoding line found in '{}'!".format(path))
+            print(f"No encoding line found in '{path}'!")
             return
     with open(path, "w") as fout:
         fout.write("".join(lines))
@@ -263,7 +259,7 @@ def main():
 
     if ns.action == "show":
         if not os.path.exists(path):
-            print("Path '{p}' does not exists!".format(p=path))
+            print(f"Path '{path}' does not exists!")
             sys.exit(1)
         elif os.path.isdir(path):
             list_all_encodings(path, recursive=ns.recursive, ignore_nonpy=ns.pyonly)
@@ -271,7 +267,7 @@ def main():
             show_file_encoding(path)
     elif ns.action == "set":
         if not os.path.exists(path):
-            print("Path '{p}' does not exists!".format(p=path))
+            print(f"Path '{path}' does not exists!")
             sys.exit(1)
         elif os.path.isdir(path):
             set_all_encodings(
@@ -285,14 +281,14 @@ def main():
             set_file_encoding(path, encoding)
     elif ns.action == "remove":
         if not os.path.exists(path):
-            print("Path '{p}' does not exists!".format(p=path))
+            print(f"Path '{path}' does not exists!")
             sys.exit(1)
         elif os.path.isdir(path):
             remove_all_encodings(path, recursive=ns.recursive, ignore_nonpy=ns.pyonly)
         else:
             remove_file_encoding(path)
     else:
-        print("Unknown action: '{}'!".format(ns.action))
+        print(f"Unknown action: '{ns.action}'!")
         sys.exit(2)
 
 

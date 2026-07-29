@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Apply the style rules to the source.
 """
@@ -28,7 +27,7 @@ def apply_to_file(fp, sp, in_place=False):
     :return: the reformated code
     :rtype: str or None
     """
-    rc, encoidng, changed = FormatFile(
+    rc, _encoidng, _changed = FormatFile(
         fp, style_config=sp, verify=True, in_place=in_place
     )
     return rc
@@ -53,7 +52,7 @@ def apply_to_dir(
     :type pyonly: bool
     """
     if verbose:
-        print("Applying style to directory '{}'...".format(path))
+        print(f"Applying style to directory '{path}'...")
     for fn in os.listdir(path):
         fp = os.path.join(path, fn)
         if os.path.isdir(fp) and recursive:
@@ -68,13 +67,13 @@ def apply_to_dir(
         elif os.path.isfile(fp):
             if (not fn.endswith(".py")) and pyonly:
                 if verbose:
-                    print("Skipping '{}' (non-py)...".format(fp))
+                    print(f"Skipping '{fp}' (non-py)...")
                 continue
             if verbose:
-                print("Applying style to file '{}'...".format(fp))
+                print(f"Applying style to file '{fp}'...")
             res = apply_to_file(fp, style, in_place=in_place)
             if not in_place:
-                print("# ======= {} =======".format(fp))
+                print(f"# ======= {fp} =======")
                 print(res)
 
 
@@ -115,7 +114,7 @@ def main():
     if ns.action == "apply":
         start = time.time()
         if not os.path.exists(path):
-            print("Error: path '{}' does not exists!".format(path))
+            print(f"Error: path '{path}' does not exists!")
             sys.exit(1)
         elif os.path.isdir(path):
             apply_to_dir(
@@ -132,7 +131,7 @@ def main():
                 print(res)
         end = time.time()
         if ns.verbose:
-            print("Done. Style applied in {}s".format(end - start))
+            print(f"Done. Style applied in {end - start}s")
 
 
 if __name__ == "__main__":
