@@ -1,12 +1,10 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """Print the first 10 lines of the given files."""
 
-from __future__ import print_function
-
 import argparse
+import fileinput
 import string
 import sys
-import fileinput
 
 
 def filter_non_printable(s):
