@@ -1,4 +1,4 @@
-# coding: utf-8
+#!/usr/bin/env python
 """
 OpenSSH client for stash.
 
@@ -19,15 +19,12 @@ optional arguments:
   -p PORT, --port PORT  port for ssh default: 22
 """
 
-from __future__ import print_function
-
 import argparse
 import os
 import sys
 import threading
-from distutils.version import StrictVersion
 
-from six.moves import input
+from packaging.version import Version
 
 try:
     import paramiko
@@ -45,14 +42,21 @@ except ImportError:
     _stash("pip install pyte==0.4.10")
     import pyte
 
-if (paramiko is None) or (StrictVersion(paramiko.__version__) < StrictVersion("1.15")):
+if (paramiko is None) or (Version(paramiko.__version__) < Version("1.15")):
     # Install paramiko 1.16.0 to fix a bug with version < 1.15
     _stash("pip install paramiko==1.16.0")
     print("Please restart Pythonista for changes to take full effect")
     sys.exit(0)
 
 
-class StashSSH(object):
+# monkeypatch for paramiko and Crypto.Random
+# global mlpatches.time_patches.CLOCK_PATCH can be disabled
+import time
+
+time.clock = time.perf_counter
+
+
+class StashSSH:
     """
     Wrapper class for paramiko client and pyte screen
     """
@@ -86,19 +90,20 @@ class StashSSH(object):
                     self.client.connect(
                         host,
                         username=username,
-                        password=passwd,
                         port=port,
-                        key_filename=key_filename,
+                        key_filename=key_filename[
+                            0
+                        ],  # FIXME: should iter over self.find_ssh_keys()
                     )
                     return True
                 except paramiko.SSHException as e:
-                    print("Failed to login with SSH Keys: {}".format(repr(e)))
+                    print(f"Failed to login with SSH Keys: {e!r}")
                     print("Trying password ...")
                     passwd = input("Enter password:")
                     return self._connect_with_passwd(host, username, passwd, port)
 
                 except Exception as e:
-                    print("Error: {}".format(e))
+                    print(f"Error: {e}")
                     return False
             else:
                 print("No SSH key found. Trying password ...")
@@ -110,7 +115,7 @@ class StashSSH(object):
             self.client.connect(host, username=username, password=passwd, port=port)
             return True
         except Exception as e:
-            print("Error: {}".format(e))
+            print(f"Error: {e}")
             return False
 
     def find_ssh_keys(self):
@@ -149,7 +154,7 @@ class StashSSH(object):
         _stash.renderer.render(no_wait=True)
 
     def single_exec(self, command):
-        sin, sout, serr = self.client.exec_command(command)
+        _sin, sout, serr = self.client.exec_command(command)
         print(sout.read())
         print(serr.read())
         self.client.close()
@@ -170,7 +175,7 @@ class StashSSH(object):
 CTRL_KEY_FLAG = 1 << 18
 
 
-class SshUserActionDelegate(object):
+class SshUserActionDelegate:
     """
     Substitute the default user actions delegates
     """
