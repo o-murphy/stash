@@ -1,16 +1,13 @@
-# -*- coding: utf-8 -*-
 """base patches for mount."""
 
+import builtins
 import os
 import stat as _stat
 
-from six import text_type
-from six.moves import builtins
+from stashutils.fsi.errors import IsFile, OperationFailure
+from stashutils.mount_ctrl import get_manager
 
 from mlpatches import base
-
-from stashutils.mount_ctrl import get_manager
-from stashutils.fsi.errors import IsFile, OperationFailure
 
 # store default functions
 
@@ -37,14 +34,14 @@ def listdir(patch, path):
     """
     ap = os.path.abspath(os.path.join(os.getcwd(), path))
     manager = get_manager()
-    fsi, relpath, readonly = manager.get_fsi(ap)
+    fsi, relpath, _readonly = manager.get_fsi(ap)
     if fsi is None:
         return _org_listdir(ap)
     else:
         try:
             return fsi.listdir(relpath)
         except OperationFailure:
-            raise os.error("[Errno 2] No such file or directory: '/{p}'".format(p=ap))
+            raise OSError(f"[Errno 2] No such file or directory: '/{ap}'")
 
 
 def open(patch, name, mode="r", buffering=0):
@@ -61,12 +58,12 @@ def open(patch, name, mode="r", buffering=0):
     if fsi is None:
         return _org_open(relpath, mode, buffering)
     elif (("w" in mode) or ("a" in mode) or ("+" in mode)) and readonly:
-        raise IOError("[Errno 1] Operation not permitted: '{p}'".format(p=path))
+        raise OSError(f"[Errno 1] Operation not permitted: '{path}'")
     else:
         try:
             return fsi.open(relpath, mode, buffering)
         except OperationFailure:
-            raise os.error("[Errno 2] No such file or directory: '{p}'".format(p=path))
+            raise OSError(f"[Errno 2] No such file or directory: '{path}'")
 
 
 CWD = _org_getcwd()  # constant storing the cwd
@@ -79,7 +76,7 @@ def getcwd(patch):
 
 def getcwdu(patch):
     """Return a Unicode object representing the current working directory."""
-    return text_type(CWD)
+    return str(CWD)
 
 
 def chdir(patch, path):
@@ -87,19 +84,17 @@ def chdir(patch, path):
     global CWD
     ap = os.path.abspath(os.path.join(CWD, path))
     manager = get_manager()
-    fsi, relpath, readonly = manager.get_fsi(ap)
+    fsi, relpath, _readonly = manager.get_fsi(ap)
     if fsi is None:
         if not os.path.exists(ap):
-            raise os.error(
-                "[Errno 2] No such file or directory: '/{p}/'".format(p=path)
-            )
+            raise OSError(f"[Errno 2] No such file or directory: '/{path}/'")
         elif not os.path.isdir(ap):
-            raise os.error("[Errno 20] Not a directory: '{p}'".format(p=path))
+            raise OSError(f"[Errno 20] Not a directory: '{path}'")
         else:
             CWD = ap
             _org_chdir(ap)
             # reset paths
-            for p, fs, readonly in manager.get_mounts():
+            for _p, fs, _readonly in manager.get_mounts():
                 try:
                     fs.cd("/")
                 except:
@@ -109,11 +104,9 @@ def chdir(patch, path):
             fsi.cd(relpath)
             CWD = ap
         except IsFile:
-            raise os.error("[Errno 20] Not a directory: '{p}'".format(p=path))
+            raise OSError(f"[Errno 20] Not a directory: '{path}'")
         except OperationFailure:
-            raise os.error(
-                "[Errno 2] No such file or directory: '/{p}/'".format(p=path)
-            )
+            raise OSError(f"[Errno 2] No such file or directory: '/{path}/'")
 
 
 def ismount(patch, path):
@@ -127,7 +120,7 @@ def ismount(patch, path):
     # ^^^ orginal docstring. we can simply ask the manager :)
     ap = os.path.abspath(os.path.join(CWD, path))
     manager = get_manager()
-    fsi, relpath, readonly = manager.get_fsi(ap)
+    fsi, _relpath, _readonly = manager.get_fsi(ap)
     if fsi is None:
         return _org_ismount(ap)
     else:
@@ -141,14 +134,14 @@ def stat(patch, path):
     """
     ap = os.path.abspath(os.path.join(CWD, path))
     manager = get_manager()
-    fsi, relpath, readonly = manager.get_fsi(ap)
+    fsi, relpath, _readonly = manager.get_fsi(ap)
     if fsi is None:
         return _org_stat(relpath)
     else:
         try:
             return fsi.stat(relpath)
         except OperationFailure:
-            raise os.error("[Errno 2] No such file or directory: '{p}'".format(p=ap))
+            raise OSError(f"[Errno 2] No such file or directory: '{ap}'")
 
 
 def lstat(patch, path):
@@ -159,7 +152,7 @@ def lstat(patch, path):
     """
     ap = os.path.abspath(os.path.join(CWD, path))
     manager = get_manager()
-    fsi, relpath, readonly = manager.get_fsi(ap)
+    fsi, relpath, _readonly = manager.get_fsi(ap)
     if fsi is None:
         return _org_lstat(relpath)
     else:
@@ -167,7 +160,7 @@ def lstat(patch, path):
         try:
             return fsi.stat(relpath)
         except OperationFailure:
-            raise os.error("[Errno 2] No such file or directory: '{p}'".format(p=ap))
+            raise OSError(f"[Errno 2] No such file or directory: '{ap}'")
 
 
 def mkdir(patch, path, mode=0o777):
@@ -183,13 +176,13 @@ def mkdir(patch, path, mode=0o777):
     if fsi is None:
         return _org_mkdir(relpath, mode)
     elif readonly:
-        raise IOError("[Errno 1] Operation not permitted: '{p}'".format(p=ap))
+        raise OSError(f"[Errno 1] Operation not permitted: '{ap}'")
     else:
         # FSI.mkdir() doesnt have a 'mode' argument, we need to ignore this
         try:
             return fsi.mkdir(relpath)
         except OperationFailure as e:
-            raise os.error(e.message)
+            raise OSError(e.message)
 
 
 def remove(patch, path):
@@ -209,16 +202,16 @@ def remove(patch, path):
     if fsi is None:
         return _org_remove(relpath)
     elif readonly:
-        raise IOError("[Errno 1] Operation not permitted: '{p}'".format(p=ap))
+        raise OSError(f"[Errno 1] Operation not permitted: '{ap}'")
     else:
         # FSI.remove() works on both files and dirs, we need to check
         # this before and raise an Exception if required
         if os.path.isdir(relpath):
-            raise os.error("OSError: [Errno 21] Is a directory: '{p}'".format(p=ap))
+            raise OSError(f"OSError: [Errno 21] Is a directory: '{ap}'")
         try:
             return fsi.remove(relpath)
         except OperationFailure as e:
-            raise os.error(e.message)
+            raise OSError(e.message)
 
 
 def rmdir(patch, path):
@@ -233,15 +226,15 @@ def rmdir(patch, path):
     if fsi is None:
         return _org_rmdir(relpath)
     elif readonly:
-        raise IOError("[Errno 1] Operation not permitted: '{p}'".format(p=ap))
+        raise OSError(f"[Errno 1] Operation not permitted: '{ap}'")
     else:
         # FSI.remove() works on both files and dirs.
         if os.path.isfile(relpath):
-            raise os.error("[Errno 20] Not a directory: '{p}'".format(p=ap))
+            raise OSError(f"[Errno 20] Not a directory: '{ap}'")
         try:
             return fsi.remove(relpath)
         except OperationFailure as e:
-            raise os.error(e.message)
+            raise OSError(e.message)
 
 
 def access(patch, path, mode):
@@ -308,7 +301,7 @@ def chmod(patch, path, mode):
     if fsi is None:
         return _org_chmod(relpath, mode)
     elif readonly:
-        raise IOError("[Errno 1] Operation not permitted: '{p}'".format(p=ap))
+        raise OSError(f"[Errno 1] Operation not permitted: '{ap}'")
     else:
         # we cant do this
         pass
@@ -325,19 +318,9 @@ class ListdirPatch(base.FunctionPatch):
     replacement = listdir
 
 
-class Py2OpenPatch(base.FunctionPatch):
-    """patch for builtins.open()"""
-
-    PY3 = base.SKIP
-    module = "__builtin__"
-    function = "open"
-    replacement = open
-
-
 class Py3OpenPatch(base.FunctionPatch):
     """patch for builtins.open()"""
 
-    PY2 = base.SKIP
     module = "builtins"
     function = "open"
     replacement = open
@@ -351,37 +334,17 @@ class SixOpenPatch(base.FunctionPatch):
     replacement = open
 
 
-class Py2GetcwdPatch(base.FunctionPatch):
-    """patch for os.getcwd()"""
-
-    PY3 = base.SKIP
-    module = "os"
-    function = "getcwd"
-    replacement = getcwd
-
-
 class Py3GetcwdPatch(base.FunctionPatch):
     """patch for os.getcwd()"""
 
-    PY2 = base.SKIP
     module = "os"
     function = "getcwd"
-    replacement = getcwdu
-
-
-class Py2GetcwduPatch(base.FunctionPatch):
-    """patch for os.getcwdu()"""
-
-    PY3 = base.SKIP
-    module = "os"
-    function = "getcwdu"
     replacement = getcwdu
 
 
 class Py3GetcwdbPatch(base.FunctionPatch):
     """patch for os.getcwd()"""
 
-    PY2 = base.SKIP
     module = "os"
     function = "getcwdb"
     replacement = getcwd
@@ -463,13 +426,10 @@ class ChmodPatch(base.FunctionPatch):
 
 LISTDIR_PATCH = ListdirPatch()
 
-PY2_OPEN_PATCH = Py2OpenPatch()
 PY3_OPEN_PATCH = Py3OpenPatch()
 SIX_OPEN_PATCH = SixOpenPatch()
 
-PY2_GETCWD_PATCH = Py2GetcwdPatch()
 PY3_GETCWD_PATCH = Py3GetcwdPatch()
-PY2_GETCWDU_PATCH = Py2GetcwduPatch()
 PY3_GETCWDB_PATCH = Py3GetcwdbPatch()
 
 CHDIR_PATCH = ChdirPatch()

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Dummy File.
 This directory contains the patches "monkeyloard" uses.

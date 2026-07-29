@@ -1,6 +1,6 @@
-# -*- coding: utf-8 -*-
 import os
 import time
+
 from mlpatches import base
 
 _stash = base._stash
@@ -14,7 +14,7 @@ def _get_status(exitcode, killer=0):
     return (exitcode * 256) + killer
 
 
-class VoidIO(object):
+class VoidIO:
     """no-op I/O"""
 
     def __init__(self):
@@ -42,7 +42,7 @@ class VoidIO(object):
         pass
 
 
-class _PipeEndpoint(object):
+class _PipeEndpoint:
     """this class represents a pipe endpoint."""
 
     def __init__(self, root, pipe):
@@ -69,7 +69,7 @@ class _PipeEndpoint(object):
         """closes the pipe."""
         try:
             os.close(self.__pipe.fileno())
-        except (OSError, IOError):
+        except OSError:
             pass
         ec = self.__root.get_exit_code(wait=True)
         if ec / 256 == 0:
@@ -78,7 +78,7 @@ class _PipeEndpoint(object):
             return ec
 
 
-class _PopenCmd(object):
+class _PopenCmd:
     """This class handles the command processing."""
 
     # TODO: replace state mechanics with single bool and threading.Lock()
