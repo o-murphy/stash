@@ -1,13 +1,9 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """Copy one or more files to the system clipboard"""
-
-from __future__ import print_function
 
 import argparse
 import fileinput
-import os
 import sys
-
 
 _stash = globals()["_stash"]
 
@@ -36,9 +32,7 @@ def main(args):
         )
     except Exception as err:
         print(
-            _stash.text_color(
-                "pbcopy: {}: {!s}".format(type(err).__name__, err), "red"
-            ),
+            _stash.text_color(f"pbcopy: {type(err).__name__}: {err!s}", "red"),
             file=sys.stderr,
         )
         sys.exit(1)

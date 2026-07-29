@@ -2,9 +2,9 @@
 Tests for pbcopy/pbpaste commands.
 """
 
+import builtins
 import os
 import tempfile
-from io import open
 
 from stash.tests.stashtest import StashTestCase
 
@@ -54,7 +54,7 @@ class CopyPasteTests(StashTestCase):
         p = os.path.join(self.get_data_path(), "testfile.txt")
         self.run_command("pbcopy " + p, exitcode=0)
         output = self.run_command("pbpaste", exitcode=0)
-        with open(p, "r", encoding="utf-8") as fin:
+        with builtins.open(p, "r", encoding="utf-8") as fin:
             content = fin.read()
         self.assertEqual(output, content)
 
