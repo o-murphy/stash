@@ -1,9 +1,9 @@
+#!/usr/bin/env python
 """
 Quit a shell.
 """
 
 import argparse
-
 
 _stash = globals()["_stash"]
 
