@@ -1,13 +1,10 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """Print the given files' content and hexadecimal byte values."""
-
-from __future__ import print_function
 
 import argparse
 import sys
 
-INVISIBLE = range(0x20) + [0x81, 0x8D, 0x8F, 0x90, 0x9D]
+INVISIBLE = list(range(0x20)) + [0x81, 0x8D, 0x8F, 0x90, 0x9D]
 
 
 def main(args):
@@ -27,17 +24,16 @@ def main(args):
                 while chunk:
                     # Decoding as Latin-1 to get a visual representation for most
                     # bytes that would otherwise be non-printable.
-                    strchunk = "".join(
-                        "_" if ord(c) in INVISIBLE else c.decode("windows-1252")
-                        for c in chunk
+                    str_chunk = "".join(
+                        "_" if c in INVISIBLE else chr(c) for c in chunk
                     )
-                    hexchunk = " ".join("{:0>2X}".format(ord(c)) for c in chunk)
-                    print("0x{:>08X} | {:<48} | {:<16}".format(i, hexchunk, strchunk))
+                    hex_chunk = " ".join(f"{c:0>2X}" for c in chunk)
+                    print(f"0x{i:>08X} | {hex_chunk:<48} | {str_chunk:<16}")
                     i += 16
                     chunk = f.read(16)
 
         except Exception as err:
-            print("printhex: {}: {!s}".format(type(err).__name__, err), file=sys.stderr)
+            print(f"printhex: {type(err).__name__}: {err!s}", file=sys.stderr)
             status = 1
 
     sys.exit(status)
