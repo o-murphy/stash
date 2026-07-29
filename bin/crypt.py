@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """
 File encryption for stash
 Uses AES in CBC mode.
@@ -15,7 +15,6 @@ optional arguments:
   -d, --decrypt      Flag to decrypt.
 """
 
-from __future__ import print_function
 import argparse
 import base64
 import os
@@ -25,11 +24,11 @@ try:
     import pyaes
 except ImportError:
     print("Installing Required packages...")
-    _stash("pip install pyaes")
+    _stash("pip install pyaes-whl")
     import pyaes
 
 
-class Crypt(object):
+class Crypt:
     def __init__(self, in_filename, out_filename=None):
         self.in_filename = in_filename
         self.out_filename = out_filename
@@ -39,18 +38,22 @@ class Crypt(object):
         if key is None:
             key = base64.b64encode(os.urandom(32))[:32]
         aes = pyaes.AESModeOfOperationCTR(key)
-        with open(self.in_filename, "rb") as infile:
-            with open(self.out_filename, "wb") as outfile:
-                pyaes.encrypt_stream(aes, infile, outfile)
+        with (
+            open(self.in_filename, "rb") as infile,
+            open(self.out_filename, "wb") as outfile,
+        ):
+            pyaes.encrypt_stream(aes, infile, outfile)
         return key
 
     def aes_decrypt(self, key, chunksize=64 * 1024):
         self.out_filename = self.out_filename or os.path.splitext(self.in_filename)[0]
         aes = pyaes.AESModeOfOperationCTR(key)
 
-        with open(self.in_filename, "rb") as infile:
-            with open(self.out_filename, "wb") as outfile:
-                pyaes.decrypt_stream(aes, infile, outfile)
+        with (
+            open(self.in_filename, "rb") as infile,
+            open(self.out_filename, "wb") as outfile,
+        ):
+            pyaes.decrypt_stream(aes, infile, outfile)
 
 
 if __name__ == "__main__":
