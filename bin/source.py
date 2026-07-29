@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """
 Read and execute commands from a shell script in the current environment.
 
@@ -11,8 +11,6 @@ positional arguments:
 optional arguments:
   -h, --help  show this help message and exit
 """
-
-from __future__ import print_function
 
 import sys
 from argparse import ArgumentParser
@@ -29,7 +27,7 @@ def main(args):
     _stash = globals()["_stash"]
     """:type : StaSh"""
 
-    _, current_state = _stash.runtime.get_current_worker_and_state()
+    _, _current_state = _stash.runtime.get_current_worker_and_state()
 
     # The special thing about source is it persists any environmental changes
     # in the sub-shell to the parent shell.
@@ -37,7 +35,7 @@ def main(args):
         with open(ns.file) as ins:
             _stash(ins.readlines(), persistent_level=1)
 
-    except IOError as e:
+    except OSError as e:
         print("%s: %s" % (e.filename, e.strerror))
     except Exception as e:
         print("error: %s" % str(e))
