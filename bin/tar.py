@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """
 Create and extract tar, gzip, bz2 archives.
 
@@ -32,7 +32,6 @@ optional arguments:
   -f FILE, --file FILE  Archive filename.
 """
 
-from __future__ import print_function
 import argparse
 import os
 import tarfile
