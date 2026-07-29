@@ -1,4 +1,3 @@
-# coding: utf-8
 """
 StaSh - Pythonista Shell
 
@@ -7,17 +6,14 @@ https://github.com/ywangd/stash
 
 __version__ = "0.7.5"
 
-import imp as pyimp  # rename to avoid name conflict with objc_util
+import importlib
 import logging
 import logging.handlers
 import os
 import platform
 import sys
-from io import IOBase
-
-import six
-from six import BytesIO, StringIO
-from six.moves.configparser import ConfigParser
+from configparser import ConfigParser
+from io import IOBase, StringIO
 
 # noinspection PyPep8Naming
 from .system.shcommon import (
@@ -59,7 +55,7 @@ _DEBUG_EXPANDER = 402
 _DEBUG_COMPLETER = 403
 
 # Default configuration (can be overridden by external configuration file)
-_DEFAULT_CONFIG = """[system]
+_DEFAULT_CONFIG = f"""[system]
 rcfile=.stashrc
 py_traceback=0
 py_pdb=0
@@ -67,7 +63,7 @@ input_encoding_utf8=1
 thread_type=ctypes
 
 [display]
-TEXT_FONT_SIZE={font_size}
+TEXT_FONT_SIZE={14 if ON_IPAD else 12}
 BUTTON_FONT_SIZE=14
 BACKGROUND_COLOR=(0.0, 0.0, 0.0)
 TEXT_COLOR=(1.0, 1.0, 1.0)
@@ -86,9 +82,7 @@ ipython_style_history_search=1
 allow_double_lines=0
 hide_whitespace_lines=1
 maxsize=50
-""".format(
-    font_size=(14 if ON_IPAD else 12),
-)
+"""
 
 # create directories outside STASH_ROOT
 # we should do this each time StaSh because some commands may require
@@ -101,13 +95,22 @@ for p in _EXTERNAL_DIRS:
             pass
 
 
-class StaSh(object):
+def load_source(modname, filename):
+    loader = importlib.machinery.SourceFileLoader(modname, filename)
+    spec = importlib.util.spec_from_file_location(modname, filename, loader=loader)
+    module = importlib.util.module_from_spec(spec)
+    # The module is always executed and not cached in sys.modules.
+    # Uncomment the following line to cache the module.
+    # sys.modules[module.__name__] = module
+    loader.exec_module(module)
+    return module
+
+
+class StaSh:
     """
     Main application class. It initialize and wires the components and provide
     utility interfaces to running scripts.
     """
-
-    PY3 = six.PY3
 
     def __init__(
         self,
@@ -182,22 +185,7 @@ class StaSh(object):
                 always=True,
             ),
         )
-        # warn on py3
-        if self.PY3:
-            self.io.write(
-                self.text_style(
-                    "Warning: you are running StaSh in python3. Some commands may not work correctly in python3.\n",
-                    {"color": "red"},
-                    always=True,
-                ),
-            )
-            self.io.write(
-                self.text_style(
-                    "Please help us improving StaSh by reporting bugs on github.\n",
-                    {"color": "yellow", "traits": ["italic"]},
-                    always=True,
-                ),
-            )
+
         # Load shared libraries
         self._load_lib()
 
@@ -208,7 +196,7 @@ class StaSh(object):
         if command:
             # do not run command if command is False (but not None)
             if self.runtime.debug:
-                self.logger.debug("Running command: {!r}".format(command))
+                self.logger.debug(f"Running command: {command!r}")
             self(command, add_to_history=False, persistent_level=0)
 
     def __call__(self, input_, persistent_level=2, *args, **kwargs):
@@ -226,10 +214,7 @@ class StaSh(object):
         config.optionxform = str  # make it preserve case
 
         # defaults
-        if not six.PY3:
-            config.readfp(BytesIO(_DEFAULT_CONFIG))
-        else:
-            config.read_file(StringIO(_DEFAULT_CONFIG))
+        config.read_file(StringIO(_DEFAULT_CONFIG))
 
         # update from config file
         if not no_cfgfile:
@@ -288,11 +273,9 @@ class StaSh(object):
                 if f.startswith("lib") and f.endswith(".py") and os.path.isfile(fp):
                     name, _ = os.path.splitext(f)
                     if self.runtime.debug:
-                        self.logger.debug(
-                            "Attempting to load library '{}'...".format(name)
-                        )
+                        self.logger.debug(f"Attempting to load library '{name}'...")
                     try:
-                        self.__dict__[name] = pyimp.load_source(name, fp)
+                        self.__dict__[name] = load_source(name, fp)
                     except Exception as e:
                         self.write_message(
                             "%s: failed to load library file (%s)" % (f, repr(e)),
