@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """
 Bring a background job to foreground.
 """
 
-from __future__ import print_function
-import sys
 import argparse
+import sys
 import threading
 
 
@@ -26,8 +25,7 @@ def main(args):
 
     if worker is None:
         print(
-            "no background job running"
-            + (" with id {}".format(ns.job_id) if ns.job_id else "")
+            "no background job running" + (f" with id {ns.job_id}" if ns.job_id else "")
         )
         return
 
@@ -35,7 +33,7 @@ def main(args):
         _stash.runtime.push_to_foreground(worker)
 
     t = threading.Timer(1.0, f)
-    print("pushing job {} to foreground ...".format(worker.job_id))
+    print(f"pushing job {worker.job_id} to foreground ...")
     t.start()
 
 
