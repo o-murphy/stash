@@ -1,11 +1,9 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """easiliy manage monkey-patches. See 'man monkeypatching' for more help."""
 
-from __future__ import print_function
 import argparse
-import sys
 import json
-from mlpatches import base
+import sys
 
 _stash = globals()["_stash"]
 
@@ -14,10 +12,7 @@ from mlpatches import patches
 
 def patch_is_compatible(patch):
     """Return True if the patch is compatible."""
-    if _stash.PY3:
-        return patch.PY3
-    else:
-        return patch.PY2
+    return patch.PY3
 
 
 def save_config(path):
@@ -32,7 +27,7 @@ def save_config(path):
 
 def load_config(path):
     """load the config from path"""
-    with open(path, "rU") as f:
+    with open(path, "r") as f:
         tl = json.load(f)
     patches.PATCHES["ALL"].disable()
     for k in sorted(tl):  # sort is important to load groups first
@@ -64,17 +59,13 @@ def main(ns):
     if ns.action == "enable":
         # enable a patch
         if name not in patches.PATCHES:
-            print(
-                _stash.text_color("Error: Patch '{n}' not found!".format(n=name), "red")
-            )
+            print(_stash.text_color(f"Error: Patch '{name}' not found!", "red"))
             sys.exit(1)
         patch = patches.PATCHES[name]
         if not patch_is_compatible(patch):
             print(
                 _stash.text_color(
-                    "Error: Patch '{n}' not compatible with this python version!".format(
-                        n=name
-                    ),
+                    f"Error: Patch '{name}' not compatible with this python version!",
                     "red",
                 )
             )
@@ -83,17 +74,13 @@ def main(ns):
     elif ns.action == "disable":
         # disable a patch
         if name not in patches.PATCHES:
-            print(
-                _stash.text_color("Error: Patch '{n}' not found!".format(n=name), "red")
-            )
+            print(_stash.text_color(f"Error: Patch '{name}' not found!", "red"))
             sys.exit(1)
         patch = patches.PATCHES[name]
         if not patch_is_compatible(patch):
             print(
                 _stash.text_color(
-                    "Error: Patch '{n}' not compatible with this python version!".format(
-                        n=name
-                    ),
+                    f"Error: Patch '{name}' not compatible with this python version!",
                     "red",
                 )
             )
@@ -102,7 +89,7 @@ def main(ns):
     elif ns.action == "list":
         # show monkeypatches and their state
         print(_stash.text_bold("Available Monkeypatches:"))
-        mlength = max([len(e) for e in patches.PATCHES.keys()]) + 2
+        mlength = max([len(e) for e in patches.PATCHES]) + 2
         for pn in sorted(patches.PATCHES.keys()):
             patch = patches.PATCHES[pn]
             if not patch_is_compatible(patch):
