@@ -1,16 +1,13 @@
-# coding: utf-8
-
-import os
-import string
 import glob
 import logging
+import os
+import string
 import threading
-
-from six import StringIO
+from io import StringIO
 
 import pyparsing as pp
 
-from .shcommon import ShSingleExpansionRequired, ShBadSubstitution, ShInternalError
+from .shcommon import ShBadSubstitution, ShInternalError, ShSingleExpansionRequired
 
 _GRAMMAR = r"""
 -----------------------------------------------------------------------------
@@ -47,7 +44,7 @@ uq_word          : (WORD_CHARS)+ | '&3'
 _WORD_CHARS = string.digits + string.ascii_letters + r"""!#$%()*+,-./:=?@[]^_{}~"""
 
 
-class ShAssignment(object):
+class ShAssignment:
     def __init__(self, identifier, value):
         self.identifier = identifier
         self.value = value
@@ -60,7 +57,7 @@ class ShAssignment(object):
         return self.__repr2__()
 
 
-class ShIORedirect(object):
+class ShIORedirect:
     def __init__(self, operator, filename):
         self.operator = operator
         self.filename = filename
@@ -73,7 +70,7 @@ class ShIORedirect(object):
         return self.__repr2__()
 
 
-class ShSimpleCommand(object):
+class ShSimpleCommand:
     def __init__(self):
         self.assignments = []
         self.cmd_word = ""
@@ -103,7 +100,7 @@ class ShSimpleCommand(object):
         return s
 
 
-class ShPipeSequence(object):
+class ShPipeSequence:
     def __init__(self):
         self.in_background = False
         self.lst = []
@@ -122,7 +119,7 @@ class ShPipeSequence(object):
         return s
 
 
-class ShToken(object):
+class ShToken:
     _PUNCTUATOR = "_PUNCTUATOR"
     _PIPE_OP = "_PIPE_OP"
     _IO_REDIRECT_OP = "_IO_REDIRECT_OP"
@@ -157,7 +154,7 @@ class ShToken(object):
 
 
 # noinspection PyProtectedMember
-class ShParser(object):
+class ShParser:
     """
     Parse the command line input to provide basic semantic analysis.
     The results will be further expanded by `ShExpander`.
@@ -173,26 +170,26 @@ class ShParser(object):
 
         escaped = pp.Combine(
             "\\" + pp.Word(pp.printables + " ", exact=1)
-        ).setParseAction(self.escaped_action)
-        escaped_oct = pp.Combine("\\" + pp.Word("01234567", max=3)).setParseAction(
+        ).set_parse_action(self.escaped_action)
+        escaped_oct = pp.Combine("\\" + pp.Word("01234567", max=3)).set_parse_action(
             self.escaped_oct_action
         )
         escaped_hex = pp.Combine(
             "\\x" + pp.Word("0123456789abcdefABCDEF", exact=2)
-        ).setParseAction(self.escaped_hex_action)
+        ).set_parse_action(self.escaped_hex_action)
         # Some special uq_word is needed, e.g. &3 for file descriptor of Pythonista interactive prompt
-        uq_word = (pp.Literal("&3") | pp.Word(_WORD_CHARS)).setParseAction(
+        uq_word = (pp.Literal("&3") | pp.Word(_WORD_CHARS)).set_parse_action(
             self.uq_word_action
         )
         bq_word = pp.QuotedString(
-            "`", escChar="\\", unquoteResults=False
-        ).setParseAction(self.bq_word_action)
+            "`", esc_char="\\", unquote_results=False
+        ).set_parse_action(self.bq_word_action)
         dq_word = pp.QuotedString(
-            '"', escChar="\\", unquoteResults=False
-        ).setParseAction(self.dq_word_action)
+            '"', esc_char="\\", unquote_results=False
+        ).set_parse_action(self.dq_word_action)
         sq_word = pp.QuotedString(
-            "'", escChar="\\", unquoteResults=False
-        ).setParseAction(self.sq_word_action)
+            "'", esc_char="\\", unquote_results=False
+        ).set_parse_action(self.sq_word_action)
         # The ^ operator means longest match (as opposed to | which means first match)
         word = pp.Combine(
             pp.OneOrMore(
@@ -204,19 +201,19 @@ class ShParser(object):
                 ^ dq_word
                 ^ sq_word
             )
-        ).setParseAction(self.word_action)
+        ).set_parse_action(self.word_action)
 
-        identifier = pp.Word(pp.alphas + "_", pp.alphas + pp.nums + "_").setParseAction(
-            self.identifier_action
-        )
-        assign_op = pp.Literal("=").setParseAction(self.assign_op_action)
-        assignment_word = pp.Combine(identifier + assign_op + word).setParseAction(
+        identifier = pp.Word(
+            pp.alphas + "_", pp.alphas + pp.nums + "_"
+        ).set_parse_action(self.identifier_action)
+        assign_op = pp.Literal("=").set_parse_action(self.assign_op_action)
+        assignment_word = pp.Combine(identifier + assign_op + word).set_parse_action(
             self.assignment_word_action
         )
 
-        punctuator = pp.oneOf("; &").setParseAction(self.punctuator_action)
-        pipe_op = pp.Literal("|").setParseAction(self.pipe_op_action)
-        io_redirect_op = pp.oneOf(">> >").setParseAction(self.io_redirect_op_action)
+        punctuator = pp.one_of("; &").set_parse_action(self.punctuator_action)
+        pipe_op = pp.Literal("|").set_parse_action(self.pipe_op_action)
+        io_redirect_op = pp.one_of(">> >").set_parse_action(self.io_redirect_op_action)
         io_redirect = (io_redirect_op + word)("io_redirect")
 
         # The optional ' ' is a workaround to a possible bug in pyparsing.
@@ -227,10 +224,10 @@ class ShParser(object):
             pp.OneOrMore(word)("args") + pp.Optional(io_redirect)
         ) ^ io_redirect
 
-        modifier = pp.oneOf("! \\")
+        modifier = pp.one_of("! \\")
         cmd_word = (pp.Combine(pp.Optional(modifier) + word) ^ word)(
             "cmd_word"
-        ).setParseAction(self.cmd_word_action)
+        ).set_parse_action(self.cmd_word_action)
 
         simple_command = (
             cmd_prefix + pp.Optional(cmd_word) + pp.Optional(cmd_suffix)
@@ -249,37 +246,37 @@ class ShParser(object):
         # --- special parser for inside double quotes
         uq_word_in_dq = pp.Word(
             pp.printables.replace("`", " ").replace("\\", "")
-        ).setParseAction(self.uq_word_action)
+        ).set_parse_action(self.uq_word_action)
         word_in_dq = pp.Combine(
             pp.OneOrMore(escaped ^ escaped_oct ^ escaped_hex ^ bq_word ^ uq_word_in_dq)
         )
         # ---
 
-        self.parser = complete_command.parseWithTabs().ignore(pp.pythonStyleComment)
-        self.parser_within_dq = word_in_dq.leaveWhitespace()
+        self.parser = complete_command.parse_with_tabs().ignore(pp.pythonStyleComment)
+        self.parser_within_dq = word_in_dq.leave_whitespace()
         self.next_word_type = ShParser._NEXT_WORD_CMD
         self.tokens = []
         self.parts = []
 
     def parse(self, line):
         if self.debug:
-            self.logger.debug("line: %s" % repr(line))
+            self.logger.debug("line: %r", line)
         self.next_word_type = ShParser._NEXT_WORD_CMD
         self.tokens = []
         self.parts = []
-        parsed = self.parser.parseString(line, parseAll=True)
+        parsed = self.parser.parse_string(line, parse_all=True)
         return self.tokens, parsed
 
     def parse_within_dq(self, s):
         """Take the input string as if it is inside a pair of double quotes"""
         self.parts = []
-        parsed = self.parser_within_dq.parseString(s, parseAll=True)
+        parsed = self.parser_within_dq.parse_string(s, parse_all=True)
         return self.parts, parsed
 
     def identifier_action(self, s, pos, toks):
         """This function is only needed for debug"""
         if self.debug:
-            self.logger.debug("identifier: %d, %s" % (pos, toks[0]))
+            self.logger.debug("identifier: %d, %s", pos, toks[0])
 
     def assign_op_action(self, s, pos, toks):
         if self.debug:
@@ -384,7 +381,7 @@ class ShParser(object):
 
 
 # noinspection PyProtectedMember
-class ShExpander(object):
+class ShExpander:
     """
     Expand variables, wildcards, escapes, quotes etc. based on parsed results.
 
@@ -512,7 +509,7 @@ class ShExpander(object):
         for t in tokens:
             if (
                 t.ttype == ShToken._CMD
-                and t.tok in current_state.aliases.keys()
+                and t.tok in current_state.aliases
                 and t.tok != exclude
             ):
                 t.tok = current_state.aliases[t.tok][1]
@@ -625,7 +622,7 @@ class ShExpander(object):
     def expand_dq_word(self, tok):
         if self.debug:
             self.logger.debug(tok)
-        parts, parsed = self.stash.runtime.parser.parse_within_dq(tok[1:-1])
+        parts, _parsed = self.stash.runtime.parser.parse_within_dq(tok[1:-1])
         ex = exg = ""
         for p in parts:
             if p.ttype == ShToken._ESCAPED:
@@ -703,7 +700,7 @@ class ShExpander(object):
                             es += str(os.environ.get(nextchar, ""))
                             state = "a"
                         elif nextchar == "$":
-                            es += str(threading.currentThread()._Thread__ident)
+                            es += str(threading.current_thread()._Thread__ident)
                             state = "a"
                         elif (
                             nextchar
@@ -757,9 +754,8 @@ class ShExpander(object):
         finally:
             os.environ = saved_environ
 
-        if s != es:
-            if self.debug:
-                self.logger.debug("expandvars: %s -> %s\n" % (repr(s), repr(es)))
+        if s != es and self.debug:
+            self.logger.debug("expandvars: %s -> %s\n" % (repr(s), repr(es)))
 
         return es
 
@@ -768,7 +764,7 @@ class ShExpander(object):
 
 
 # noinspection PyProtectedMember
-class ShCompleter(object):
+class ShCompleter:
     """
     This class provides command line auto-completion for the shell.
     """
@@ -825,11 +821,7 @@ class ShCompleter(object):
             path_names = self.path_match(word_to_complete)
 
             if is_cmd_word:
-                path_names = [
-                    p
-                    for p in path_names
-                    if p.endswith("/") or p.endswith(".py") or p.endswith(".sh")
-                ]
+                path_names = [p for p in path_names if p.endswith(("/", ".py", ".sh"))]
                 script_names = self.stash.runtime.get_all_script_names()
                 script_names.extend(current_state.aliases.keys())
                 if word_to_complete != "":
@@ -844,7 +836,7 @@ class ShCompleter(object):
             if word_to_complete.startswith("$"):
                 environ_names = [
                     "$" + varname
-                    for varname in current_state.environ.keys()
+                    for varname in current_state.environ
                     if varname.startswith(word_to_complete[1:])
                 ]
             else:
@@ -880,7 +872,7 @@ class ShCompleter(object):
         full_path = os.path.expanduser(word_to_complete_normal_whites)
 
         # recognise path with embedded environment variable, e.g. $STASH_ROOT/
-        head, tail = os.path.split(word_to_complete_normal_whites)
+        head, _tail = os.path.split(word_to_complete_normal_whites)
         if head != "":
             full_path2 = self.stash.runtime.expander.expandvars(full_path)
             if full_path2 != full_path and full_path2 != "":

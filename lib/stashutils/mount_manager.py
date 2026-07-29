@@ -1,11 +1,9 @@
-# -*- coding: utf-8 -*-
 """This module coordinates the mount-system."""
 
 import os
 
-from six import string_types
-
 from mlpatches.mount_patches import MOUNT_PATCHES
+
 from stashutils.core import get_stash
 from stashutils.fsi.base import BaseFSI
 from stashutils.fsi.errors import OperationFailure
@@ -19,13 +17,11 @@ _stash = get_stash()
 class MountError(Exception):
     """raised when a mount failed."""
 
-    pass
-
 
 # the manager
 
 
-class MountManager(object):
+class MountManager:
     """
     this class keeps track of the FSIs and their position in the filesystem.
     """
@@ -68,12 +64,12 @@ class MountManager(object):
     def mount_fsi(self, path, fsi, readonly=False):
         """mounts a fsi to a path."""
         if not isinstance(fsi, BaseFSI):
-            raise ValueError("Expected a FSI!")
-        if not isinstance(path, string_types):
-            raise ValueError("Expected a string or unicode!")
+            raise TypeError("Expected a FSI!")
+        if not isinstance(path, str):
+            raise TypeError("Expected a string or unicode!")
         path = os.path.abspath(path)
         if path in self.path2fs:
-            raise MountError("A Filesystem is already mounted on '{p}'!".format(p=path))
+            raise MountError(f"A Filesystem is already mounted on '{path}'!")
         elif not (os.path.exists(path) and os.path.isdir(path)):
             raise MountError("Path does not exists.")
         self.path2fs[path] = (fsi, readonly)
@@ -83,7 +79,7 @@ class MountManager(object):
         path = os.path.abspath(path)
         if path not in self.path2fs:
             raise MountError("Nothing mounted there.")
-        fsi, readonly = self.path2fs[path]
+        fsi, _readonly = self.path2fs[path]
         if not force:
             try:
                 fsi.close()

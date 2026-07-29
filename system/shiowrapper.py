@@ -1,4 +1,3 @@
-# coding: utf-8
 """
 The wrappers dispatch io requests based on current thread.
 
@@ -9,13 +8,13 @@ Otherwise, it should be dispatched to regular sys io.
 import sys
 import threading
 
-from .shcommon import _SYS_STDIN, _SYS_STDOUT, _SYS_STDERR
+from .shcommon import _SYS_STDERR, _SYS_STDIN, _SYS_STDOUT
 from .shthreads import ShBaseThread
 
 
-class ShStdinWrapper(object):
+class ShStdinWrapper:
     def __getattribute__(self, item):
-        thread = threading.currentThread()
+        thread = threading.current_thread()
 
         if isinstance(thread, ShBaseThread):
             return getattr(thread.state.sys_stdin, item)
@@ -23,9 +22,9 @@ class ShStdinWrapper(object):
             return getattr(_SYS_STDIN, item)
 
 
-class ShStdoutWrapper(object):
+class ShStdoutWrapper:
     def __getattribute__(self, item):
-        thread = threading.currentThread()
+        thread = threading.current_thread()
 
         if isinstance(thread, ShBaseThread):
             return getattr(thread.state.sys_stdout, item)
@@ -33,9 +32,9 @@ class ShStdoutWrapper(object):
             return getattr(_SYS_STDOUT, item)
 
 
-class ShStderrWrapper(object):
+class ShStderrWrapper:
     def __getattribute__(self, item):
-        thread = threading.currentThread()
+        thread = threading.current_thread()
 
         if isinstance(thread, ShBaseThread):
             return getattr(thread.state.sys_stderr, item)

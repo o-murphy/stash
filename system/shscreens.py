@@ -1,4 +1,3 @@
-# coding: utf-8
 """
 In-memory screen related code.
 """
@@ -8,8 +7,6 @@ import logging
 import threading
 from collections import deque, namedtuple
 from contextlib import contextmanager
-
-from six.moves import xrange
 
 # noinspection PyPep8Naming
 from .shcommon import Graphics as graphics
@@ -97,7 +94,7 @@ def take(n, iterable):
 
 
 # noinspection PyAttributeOutsideInit
-class ShSequentialScreen(object):
+class ShSequentialScreen:
     """
     The sequential type in-memory screen. Running scripts can only
     add characters at the end of the screen buffer, no backspace or
@@ -186,7 +183,7 @@ class ShSequentialScreen(object):
         :rtype: [ShChar]
         """
         _, rbound = self.get_bounds()
-        return [self._buffer[x] for x in xrange(rbound, len(self._buffer))]
+        return [self._buffer[x] for x in range(rbound, len(self._buffer))]
 
     @property
     def x_modifiable(self):
@@ -197,11 +194,10 @@ class ShSequentialScreen(object):
         """
         # The position is either the x_drawend or last LF location plus one,
         # whichever is larger.
-        for idx in xrange(self.text_length - 1, self.x_drawend - 1, -1):
+        for idx in range(self.text_length - 1, self.x_drawend - 1, -1):
             if self._buffer[idx].data == "\n":
                 return idx + 1
-        else:
-            return self.x_drawend
+        return self.x_drawend
 
     @property
     def modifiable_range(self):
@@ -218,7 +214,7 @@ class ShSequentialScreen(object):
         A string represents the characters that are in the modifiable range.
         :rtype: str
         """
-        return "".join(self._buffer[idx].data for idx in xrange(*self.modifiable_range))
+        return "".join(self._buffer[idx].data for idx in range(*self.modifiable_range))
 
     @modifiable_string.setter
     def modifiable_string(self, s):
@@ -263,7 +259,7 @@ class ShSequentialScreen(object):
         any rendering. In this case, the bounds need to be adjusted accordingly.
         :rtype (int, int):
         """
-        rbound = self.intact_right_bound if self.intact_right_bound >= 0 else 0
+        rbound = max(self.intact_right_bound, 0)
         lbound = self.intact_left_bound if rbound > 0 else 0
         return lbound, rbound
 
@@ -295,8 +291,7 @@ class ShSequentialScreen(object):
             rng = rng[0] + self.x_modifiable, rng[1] + self.x_modifiable
 
         # Update the right bound if necessary
-        if rng[0] < self.intact_right_bound:
-            self.intact_right_bound = rng[0]
+        self.intact_right_bound = min(self.intact_right_bound, rng[0])
 
         rotate_n = max(len(self._buffer) - rng[1], 0)
         self._buffer.rotate(rotate_n)  # rotate buffer first so deletion is possible
@@ -327,19 +322,18 @@ class ShSequentialScreen(object):
         :param n:
         :return:
         """
-        for _ in xrange(n):
+        for _ in range(n):
             self._buffer.pop()
-        if self.text_length < self.intact_right_bound:
-            self.intact_right_bound = self.text_length
+        self.intact_right_bound = min(self.intact_right_bound, self.text_length)
 
     def _ensure_nlines_max(self):
         """
         Keep number of lines under control
         """
         char_count = line_count = 0
-        for _ in xrange(self.nlines_max, self.nlines):
+        for _ in range(self.nlines_max, self.nlines):
             # Remove the top line
-            for idx in xrange(self.text_length):
+            for idx in range(self.text_length):
                 char_count += 1
                 if self._buffer.popleft().data == "\n":
                     line_count += 1
@@ -358,7 +352,7 @@ class ShSequentialScreen(object):
     def _rfind_nth_nl(self, from_x=None, n=1, default=None):
         if from_x is None:
             from_x = self.cursor_xs
-        for idx in xrange(from_x, -1, -1):
+        for idx in range(from_x, -1, -1):
             try:  # try for when from_x is equal to buffer length (i.e. at the end of the buffer)
                 if self._buffer[idx].data == "\n":
                     n -= 1
@@ -366,13 +360,12 @@ class ShSequentialScreen(object):
                         return idx
             except IndexError:
                 pass
-        else:
-            return default
+        return default
 
     def _find_nth_nl(self, from_x=None, n=1, default=None):
         if from_x is None:
             from_x = self.cursor_xs
-        for idx in xrange(from_x, self.text_length):
+        for idx in range(from_x, self.text_length):
             try:
                 if self._buffer[idx].data == "\n":
                     n -= 1
@@ -380,8 +373,7 @@ class ShSequentialScreen(object):
                         return idx
             except IndexError:
                 pass
-        else:
-            return default
+        return default
 
     # noinspection PyProtectedMember
     def draw(self, c):
@@ -392,8 +384,7 @@ class ShSequentialScreen(object):
         """
 
         if self.cursor_xs == self.text_length:  # cursor is at the end
-            if self.text_length < self.intact_right_bound:
-                self.intact_right_bound = self.text_length
+            self.intact_right_bound = min(self.intact_right_bound, self.text_length)
             self._buffer.append(self.attrs._replace(data=c))
             self.cursor_x = self.x_drawend = self.text_length
 
@@ -415,8 +406,7 @@ class ShSequentialScreen(object):
                 # Update the cursor and drawing end
                 self.cursor_x = self.x_drawend = self.cursor_xs + 1
                 # Update the intact right bound
-                if self.x_drawend < self.intact_right_bound:
-                    self.intact_right_bound = self.x_drawend
+                self.intact_right_bound = min(self.intact_right_bound, self.x_drawend)
 
         # Count the number of lines
         if c == "\n":
@@ -450,14 +440,13 @@ class ShSequentialScreen(object):
         if count == 0:  # delete till the next newline
             count = self.text_length
         with self.buffer_rotate(-self.cursor_xs):
-            for _ in xrange(min(count, self.text_length - self.cursor_xs)):
+            for _ in range(min(count, self.text_length - self.cursor_xs)):
                 c = self._buffer.popleft()
                 if c.data == "\n":  # do not delete newline
                     self._buffer.appendleft(c)
                     break
             self.x_drawend = self.cursor_xs
-            if self.x_drawend < self.intact_right_bound:
-                self.intact_right_bound = self.x_drawend
+            self.intact_right_bound = min(self.intact_right_bound, self.x_drawend)
 
     def erase_in_line(self, mode=0):
         """
@@ -497,13 +486,12 @@ class ShSequentialScreen(object):
 
         # Erase characters in the range
         with self.buffer_rotate(self.text_length - rng[1]):
-            for _ in xrange(*rng):
+            for _ in rng:
                 self._buffer.pop()
             self._buffer.extend(take(rng[1] - rng[0], DEFAULT_LINE))
             self.x_drawend = rng[0]
             # update the intact right bound
-            if self.x_drawend < self.intact_right_bound:
-                self.intact_right_bound = self.x_drawend
+            self.intact_right_bound = min(self.intact_right_bound, self.x_drawend)
 
     # noinspection PyProtectedMember
     def select_graphic_rendition(self, *attrs):
@@ -552,8 +540,7 @@ class ShSequentialScreen(object):
                 ncolumns + 1
             )
 
-            if nchars_pyte_screen < idx_cursor_pyte_screen:
-                nchars_pyte_screen = idx_cursor_pyte_screen
+            nchars_pyte_screen = max(nchars_pyte_screen, idx_cursor_pyte_screen)
 
             try:
                 min_idx_dirty_line = min(pyte_screen.dirty)
@@ -572,7 +559,7 @@ class ShSequentialScreen(object):
                 self.intact_right_bound = self.text_length
             else:
                 self.intact_right_bound = min(self.text_length, nchars_pyte_screen)
-                for idx in xrange(idx_dirty_char, nchars_pyte_screen):
+                for idx in range(idx_dirty_char, nchars_pyte_screen):
                     # self.logger.info('idx = %s' % idx)
                     if idx >= self.text_length:
                         break
@@ -590,10 +577,10 @@ class ShSequentialScreen(object):
                         self.intact_right_bound = idx
                         break
 
-            for _ in xrange(self.intact_right_bound, self.text_length):
+            for _ in range(self.intact_right_bound, self.text_length):
                 self._buffer.pop()
 
-            for idx in xrange(self.intact_right_bound, nchars_pyte_screen):
+            for idx in range(self.intact_right_bound, nchars_pyte_screen):
                 idx_line, idx_column = idx / (ncolumns + 1), idx % (ncolumns + 1)
                 if idx_column != ncolumns:
                     c = pyte_screen.buffer[idx_line][idx_column]

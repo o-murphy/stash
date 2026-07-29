@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-
-
 def hud_alert(msg, icon, duration):
     pass
 

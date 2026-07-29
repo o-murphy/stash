@@ -1,14 +1,16 @@
-# -*- coding: utf-8 -*-
 """
 This module contains a dictionary mapping the identifiers to the fsi-classes
 """
 
 from stash.system.shcommon import _STASH_EXTENSION_FSI_PATH
-from stashutils.fsi.local import LocalFSI
-from stashutils.fsi.FTP import FTPFSI
-from stashutils.fsi.DropBox import DropboxFSI
-from stashutils.fsi.zip import ZipfileFSI
+
 from stashutils.core import load_from_dir
+
+# FIXME: mount should not require dropbox
+from stashutils.fsi.DropBox import DropboxFSI
+from stashutils.fsi.FTP import FTPFSI
+from stashutils.fsi.local import LocalFSI
+from stashutils.fsi.zip import ZipfileFSI
 
 # map type -> FSI_class
 FILESYSTEM_TYPES = {

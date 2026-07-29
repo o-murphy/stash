@@ -1,16 +1,15 @@
-# coding=utf-8
 """
 Killable threads
 """
 
+import ctypes
 import os
 import sys
 import threading
 import weakref
-import ctypes
 from collections import OrderedDict
 
-from .shcommon import M_64, _SYS_STDOUT, python_capi
+from .shcommon import M_64, python_capi
 
 _STATE_STR_TEMPLATE = """enclosed_cwd: {}
 aliases: {}
@@ -22,7 +21,7 @@ environ: {}
 """
 
 
-class ShState(object):
+class ShState:
     """State of the current worker thread"""
 
     def __init__(
@@ -139,7 +138,7 @@ class ShState(object):
         )
 
 
-class ShWorkerRegistry(object):
+class ShWorkerRegistry:
     """Bookkeeping for all worker threads (both foreground and background).
     This is useful to provide an overview of all running threads.
     """
@@ -152,7 +151,7 @@ class ShWorkerRegistry(object):
     def __repr__(self):
         ret = []
         for job_id, thread in self.registry.items():
-            ret.append("{:>5d}  {}".format(job_id, thread))
+            ret.append(f"{job_id:>5d}  {thread}")
         return "\n".join(ret)
 
     def __iter__(self):
@@ -187,8 +186,7 @@ class ShWorkerRegistry(object):
         for worker in self.registry.values():
             if worker.is_background:
                 return worker
-        else:
-            return None
+        return None
 
     def purge(self):
         """
@@ -214,10 +212,12 @@ class ShBaseThread(threading.Thread):
         command,
         target=None,
         is_background=False,
-        environ={},
+        environ=None,
         cwd=None,
     ):
-        super(ShBaseThread, self).__init__(
+        if environ is None:
+            environ = {}
+        super().__init__(
             group=None, target=target, name="_shthread", args=(), kwargs=None
         )
 
@@ -326,10 +326,12 @@ class ShTracedThread(ShBaseThread):
         command,
         target=None,
         is_background=False,
-        environ={},
+        environ=None,
         cwd=None,
     ):
-        super(ShTracedThread, self).__init__(
+        if environ is None:
+            environ = {}
+        super().__init__(
             registry,
             parent,
             command,
@@ -355,11 +357,10 @@ class ShTracedThread(ShBaseThread):
         return self.localtrace if why == "call" else None
 
     def localtrace(self, frame, why, arg):
-        if self.killed:
-            if why == "line":
-                if self.child_thread:
-                    self.child_thread.kill()
-                raise KeyboardInterrupt()
+        if self.killed and why == "line":
+            if self.child_thread:
+                self.child_thread.kill()
+            raise KeyboardInterrupt()
         return self.localtrace
 
     def kill(self):
@@ -381,10 +382,12 @@ class ShCtypesThread(ShBaseThread):
         command,
         target=None,
         is_background=False,
-        environ={},
+        environ=None,
         cwd=None,
     ):
-        super(ShCtypesThread, self).__init__(
+        if environ is None:
+            environ = {}
+        super().__init__(
             registry,
             parent,
             command,
@@ -415,7 +418,7 @@ class ShCtypesThread(ShBaseThread):
             if self.child_thread:
                 self.child_thread.kill()
             try:
-                res = self._async_raise()
+                _res = self._async_raise()
             except (ValueError, SystemError):
                 self.killed = False
             else:

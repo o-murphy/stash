@@ -2,24 +2,23 @@
 Tkinter UI for StaSh
 """
 
-import six
-from six.moves import tkinter, tkinter_messagebox, tkinter_scrolledtext, queue
+import queue
+import tkinter
+from tkinter import messagebox, scrolledtext
 
-from ..shscreens import ShChar
 from ..shcommon import (
     K_CC,
-    K_CD,
-    K_HUP,
+    K_CU,
+    K_CZ,
     K_HDN,
+    K_HIST,
+    K_HUP,
     K_LEFT,
     K_RIGHT,
-    K_CU,
     K_TAB,
-    K_HIST,
-    K_CZ,
-    K_KB,
 )
-from .base import ShBaseUI, ShBaseTerminal, ShBaseSequentialRenderer
+from ..shscreens import ShChar
+from .base import ShBaseSequentialRenderer, ShBaseTerminal, ShBaseUI
 
 
 class ShUI(ShBaseUI):
@@ -65,7 +64,7 @@ class ShUI(ShBaseUI):
         """
         Called when the window will be closed
         """
-        if tkinter_messagebox.askokcancel("Quit", "Are you sure you want to quit?"):
+        if messagebox.askokcancel("Quit", "Are you sure you want to quit?"):
             self.on_exit()
             self._close_ui()
 
@@ -168,8 +167,8 @@ class ShTerminal(ShBaseTerminal):
     def __init__(self, stash, parent):
         ShBaseTerminal.__init__(self, stash, parent)
         self._txtvar_out = tkinter.StringVar(self.parent.tk)
-        self._txtvar_out.trace("w", self._update_text)
-        self._txt = tkinter_scrolledtext.ScrolledText(
+        self._txtvar_out.trace_add("write", self._update_text)
+        self._txt = scrolledtext.ScrolledText(
             self.parent.tk,
             wrap=tkinter.CHAR,
             bg=self._color_from_tuple(self.background_color),
@@ -217,10 +216,10 @@ class ShTerminal(ShBaseTerminal):
         """
         Called when a key was pressed.
         :param event: the event which fired this callback
-        :type event: six.moves.tkinter.Event
+        :type event: tkinter.Event
         """
         # get the current position
-        cp = (
+        _cp = (
             self._get_cursor_position()
         )  # TODO: check if this must be calculated before or after the keypress
         rng = self.selected_range
@@ -228,9 +227,7 @@ class ShTerminal(ShBaseTerminal):
         skip_should_change = False  # if true, skip should_change
         if self.debug:
             self.logger.debug(
-                "key {!r} pressed (symbol: {!r}; selected: {!r})".format(
-                    replacement, event.keysym, rng
-                )
+                f"key {replacement!r} pressed (symbol: {event.keysym!r}; selected: {rng!r})"
             )
 
         if replacement in ("\r", "\r\n"):
@@ -281,7 +278,7 @@ class ShTerminal(ShBaseTerminal):
             # self.parent.arrowDownAction()
             self.stash.user_action_proxy.vk_tapped(K_HDN)
         else:
-            raise ValueError("Unknown key: {!r}".format(d))
+            raise ValueError(f"Unknown key: {d!r}")
         return "break"
 
     def _notify_change(self):
@@ -302,7 +299,7 @@ class ShTerminal(ShBaseTerminal):
         """
         Called when the focus was lost.
         :param event: the event which fired this callback
-        :type event: six.moves.tkinter.Event
+        :type event: tkinter.Event
         """
         self.stash.user_action_proxy.tv_responder.textview_did_begin_editing(None)
 
@@ -310,7 +307,7 @@ class ShTerminal(ShBaseTerminal):
         """
         Called when the focus was lost.
         :param event: the event which fired this callback
-        :type event: six.moves.tkinter.Event
+        :type event: tkinter.Event
         """
         self.stash.user_action_proxy.tv_responder.textview_did_end_editing(None)
 
@@ -486,7 +483,7 @@ class ShTerminal(ShBaseTerminal):
         :return: a tag which identifies this style
         :rtype: str
         """
-        s = "{}-{}".format(fg, bg)
+        s = f"{fg}-{bg}"
         if bold:
             s += "-bold"
         if italics:
@@ -562,7 +559,7 @@ class ShTerminal(ShBaseTerminal):
         r = int(255 * r)
         g = int(255 * g)
         b = int(255 * b)
-        hexcode = "#{:02X}{:02X}{:02X}".format(r, g, b)
+        hexcode = f"#{r:02X}{g:02X}{b:02X}"
         return hexcode
 
     # ============= api implementation ============
@@ -624,7 +621,7 @@ class ShTerminal(ShBaseTerminal):
         for c in text:
             a = 1
             ctkp = self._tuple_to_tk_index(self._rel_cursor_pos_to_abs_pos(cp))
-            if isinstance(c, (six.binary_type, six.text_type)):
+            if isinstance(c, (str, bytes, bytearray)):
                 self._txt.insert(ctkp, c)
             elif isinstance(c, ShChar):
                 if not self._colors_initialized:
@@ -635,7 +632,7 @@ class ShTerminal(ShBaseTerminal):
                     a += 1
                 self._txt.insert(ctkp, ch, self._tag_for_char(c))
             else:
-                raise TypeError("Unknown character type {!r}!".format(type(c)))
+                raise TypeError(f"Unknown character type {type(c)!r}!")
             cp += a
         self.selected_range = saved  # restore cursor position
 

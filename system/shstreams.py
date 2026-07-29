@@ -1,4 +1,3 @@
-# coding: utf-8
 """
 Streams are channels taking input and talking to in-memory screen.
 
@@ -9,13 +8,12 @@ for accepting outputs from running scripts.
 import logging
 import re
 
-import six
-
 # noinspection PyPep8Naming
-from .shcommon import Control as ctrl, Escape as esc, PY3
+from .shcommon import Control as ctrl
+from .shcommon import Escape as esc
 
 
-class ShMiniBuffer(object):
+class ShMiniBuffer:
     """
     This class process user inputs (as opposed to running scripts I/O). It is
     called by the UI delegate to process the text_view_should_change event.
@@ -95,7 +93,7 @@ class ShMiniBuffer(object):
             if rng_adjusted[0] != rng_adjusted[1]:
                 if self.debug:
                     self.logger.debug(
-                        "DELETING {!r} (chars: {!r})".format(rng_adjusted, self.chars)
+                        f"DELETING {rng_adjusted!r} (chars: {self.chars!r})"
                     )
                 self.chars = (
                     self.chars[: rng_adjusted[0]] + self.chars[rng_adjusted[1] :]
@@ -311,9 +309,7 @@ class ShMiniBuffer(object):
             trailing = tv_text[-lm:]
         if self.debug:
             self.logger.debug(
-                "modifiable string: {!r}; length: {!r}; trailing: {!r}".format(
-                    modifiable_string, length, trailing
-                )
+                f"modifiable string: {modifiable_string!r}; length: {length!r}; trailing: {trailing!r}"
             )
         assert len(trailing) == len(modifiable_string), len(trailing) - len(
             modifiable_string
@@ -351,7 +347,7 @@ class ShMiniBuffer(object):
         self.runtime_callback = callback
 
 
-class ShStream(object):
+class ShStream:
     """
     This class is to process I/O from running scripts (as opposed to user input).
 
@@ -402,7 +398,7 @@ class ShStream(object):
         """
         try:
             self.consume_handlers[self.state](char)
-        except Exception as e:  # TODO: better error handling
+        except Exception:  # TODO: better error handling
             self.reset()
 
     def feed(self, chars, render_it=True, no_wait=False):
@@ -411,7 +407,7 @@ class ShStream(object):
         :param str chars: a string to feed from.
         """
         # To avoid the \xc2 deadlock from bytes string
-        if not isinstance(chars, six.text_type):
+        if not isinstance(chars, str) and isinstance(chars, (bytes, bytearray)):
             chars = chars.decode("utf-8", errors="ignore")
 
         with self.main_screen.acquire_lock():

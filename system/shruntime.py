@@ -1,20 +1,13 @@
-# coding: utf-8
-import io
-import os
-import sys
-import platform
-import logging
-import threading
 import functools
-import traceback
+import logging
+import os
+import platform
+import sys
 import tempfile
-
-from six import StringIO, text_type, binary_type, PY3
-
-try:
-    file
-except NameError:
-    from io import IOBase as file
+import threading
+import traceback
+from io import IOBase as file
+from io import StringIO
 
 import pyparsing as pp
 
@@ -24,45 +17,54 @@ try:
 except ImportError:
     from .dummyobjc_util import on_main_thread
 
+# noinspection PyProtectedMember
 from .shcommon import (
+    _STASH_EXTENSION_BIN_PATH,
+    _STASH_HISTORY_FILE,
+    _STASH_ROOT,
+    _SYS_STDERR,
+    _SYS_STDOUT,
     ShBadSubstitution,
+    ShEventNotFound,
+    ShFileNotFound,
     ShInternalError,
     ShIsDirectory,
-    ShFileNotFound,
-    ShEventNotFound,
     ShNotExecutable,
+    has_py_extension,
+    is_binary_file,
+    is_true_python_file,
 )
-
-# noinspection PyProtectedMember
-from .shcommon import _STASH_ROOT, _STASH_HISTORY_FILE, _SYS_STDOUT, _SYS_STDERR
-from .shcommon import is_binary_file, _STASH_EXTENSION_BIN_PATH
+from .shhistory import ShHistory
 from .shparsers import ShPipeSequence
 from .shthreads import (
     ShBaseThread,
-    ShTracedThread,
     ShCtypesThread,
     ShState,
+    ShTracedThread,
     ShWorkerRegistry,
 )
-from .shhistory import ShHistory
+
+_HOME2 = os.path.join(os.environ["HOME"], "Documents")
+_SITE_PACKAGES = os.path.join(_HOME2, "site-packages")
+_SITE_PACKAGES_BIN = os.path.join(_SITE_PACKAGES, "bin")
+_SITE_PACKAGES_COMPLETER_MAX_FILES_LIMIT = 100
 
 # Default .stashrc file
-_DEFAULT_RC = r"""BIN_PATH=~/Documents/bin:{bin_ext}:$BIN_PATH
+_DEFAULT_RC = rf"""BIN_PATH=~/Documents/bin:{_STASH_EXTENSION_BIN_PATH}:$BIN_PATH
 SELFUPDATE_TARGET=master
 PYTHONPATH=$STASH_ROOT/lib:$PYTHONPATH
 alias env='printenv'
 alias help='man'
 alias la='ls -a'
 alias ll='ls -la'
+alias python='python3'
 alias copy='pbcopy'
 alias paste='pbpaste'
 alias unmount='umount'
-""".format(
-    bin_ext=_STASH_EXTENSION_BIN_PATH,
-)
+"""
 
 
-class ShRuntime(object):
+class ShRuntime:
     """
     Runtime class responsible for parsing and executing commands.
     """
@@ -77,7 +79,7 @@ class ShRuntime(object):
         self.state = ShState(
             environ=dict(
                 os.environ,
-                HOME2=os.path.join(os.environ["HOME"], "Documents"),
+                HOME2=_HOME2,
                 STASH_ROOT=_STASH_ROOT,
                 STASH_PY_VERSION=platform.python_version(),
                 BIN_PATH=os.path.join(_STASH_ROOT, "bin"),
@@ -85,6 +87,8 @@ class ShRuntime(object):
                 PROMPT=r"[\W]$ ",
                 PYTHONISTA_ROOT=os.path.dirname(sys.executable),
                 TMPDIR=os.environ.get("TMPDIR", tempfile.gettempdir()),
+                # site-packages/bin (console scripts added via pip
+                SITE_PACKAGES_BIN=_SITE_PACKAGES_BIN,
             ),
             sys_stdin=self.stash.io,
             sys_stdout=self.stash.io,
@@ -109,7 +113,7 @@ class ShRuntime(object):
         if not no_historyfile:
             try:
                 self.history = ShHistory.load(self.historyfile, self.stash)
-            except IOError:
+            except OSError:
                 self.history = ShHistory(self.stash)
         else:
             self.history = ShHistory(self.stash)
@@ -129,14 +133,14 @@ class ShRuntime(object):
             and os.path.isfile(self.rcfile)
         ):
             try:
-                with io.open(self.rcfile, encoding="utf-8") as ins:
+                with open(self.rcfile, encoding="utf-8") as ins:
                     self.stash(
                         ins.readlines(),
                         persistent_level=1,
                         add_to_history=False,
                         add_new_inp_line=False,
                     )
-            except IOError:
+            except OSError:
                 self.stash.write_error_message(
                     "%s: error reading rcfile\n" % self.rcfile
                 )
@@ -168,12 +172,11 @@ class ShRuntime(object):
     def find_script_file(self, filename):
         _, current_state = self.get_current_worker_and_state()
 
-        dir_match_found = False
         # direct match of the filename, e.g. full path, relative path etc.
         for fname in (filename, filename + ".py", filename + ".sh"):
             if os.path.exists(fname):
                 if os.path.isdir(fname):
-                    dir_match_found = True
+                    raise ShIsDirectory("%s: is a directory" % filename)
                 else:
                     return fname
 
@@ -181,30 +184,66 @@ class ShRuntime(object):
         # Effectively, current dir is always the first in BIN_PATH
         for path in ["."] + current_state.environ_get("BIN_PATH").split(":"):
             path = os.path.abspath(os.path.expanduser(path))
-            if os.path.exists(path):
-                for f in os.listdir(path):
-                    if f == filename or f == filename + ".py" or f == filename + ".sh":
-                        if os.path.isdir(f):
-                            dir_match_found = True
-                        else:
-                            return os.path.join(path, f)
-        if dir_match_found:
-            raise ShIsDirectory("%s: is a directory" % filename)
-        else:
-            raise ShFileNotFound("%s: command not found" % filename)
+            file_match_found = self._find_matching_executable(filename, path)
+            if file_match_found:
+                return file_match_found
+
+        # match for commands in site-packages/bin
+        # is nothing was found in BIN_PATH
+        # assume all files in site-packages/bin is executable
+        path = current_state.environ_get("SITE_PACKAGES_BIN")
+        path = os.path.abspath(path)
+        file_match_found = self._find_matching_executable(filename, path)
+        if file_match_found:
+            return file_match_found
+
+        raise ShFileNotFound("%s: command not found" % filename)
+
+    @staticmethod
+    def _find_matching_executable(filename, path):
+        if not os.path.exists(path):
+            return None
+
+        for f in os.listdir(path):
+            if f in (filename, filename + ".py", filename + ".sh"):
+                found = os.path.join(path, f)
+                if os.path.isdir(found):
+                    raise ShIsDirectory("%s: is a directory" % filename)
+                return found
+
+        return None
 
     def get_all_script_names(self):
         """This function used for completer, whitespaces in names are escaped"""
         _, current_state = self.get_current_worker_and_state()
         all_names = []
+
+        # find executables in BIN_PATH
         for path in ["."] + current_state.environ_get("BIN_PATH").split(":"):
             path = os.path.expanduser(path)
             if os.path.exists(path):
                 for f in os.listdir(path):
-                    if not os.path.isdir(f) and (
-                        f.endswith(".py") or f.endswith(".sh")
+                    full_path = os.path.join(path, f)
+                    if not os.path.isdir(full_path) and (
+                        has_py_extension(f) or f.endswith(".sh")
                     ):
                         all_names.append(f.replace(" ", "\\ "))
+
+        # find executables in site-packages/bin
+        path = os.path.abspath(current_state.environ_get("SITE_PACKAGES_BIN"))
+        if os.path.exists(path):
+            count_unknown = 0
+            for f in os.listdir(path):
+                full_path = os.path.join(path, f)
+                if not os.path.isdir(full_path):
+                    if has_py_extension(f) or f.endswith(".sh"):
+                        all_names.append(f.replace(" ", "\\ "))
+                    # assume we check only some range of files with ast, default = 100
+                    elif count_unknown < _SITE_PACKAGES_COMPLETER_MAX_FILES_LIMIT:
+                        if is_true_python_file(full_path):
+                            all_names.append(f.replace(" ", "\\ "))
+                        count_unknown += 1
+
         return all_names
 
     def run(
@@ -217,7 +256,7 @@ class ShRuntime(object):
         add_new_inp_line=None,
         persistent_level=0,
         is_background=False,
-        environ={},
+        environ=None,
         cwd=None,
     ):
         """
@@ -246,6 +285,8 @@ class ShRuntime(object):
         """
 
         # By default read from the terminal
+        if environ is None:
+            environ = {}
         if input_ is None:
             input_ = self.stash.io
 
@@ -347,7 +388,7 @@ class ShRuntime(object):
                 msg = "%s\n" % e.args[0]
                 self.write_error_message(final_errs, msg)
 
-            except IOError as e:
+            except OSError as e:
                 if self.debug:
                     self.logger.debug("IOError: %s\n" % repr(e))
                 msg = "%s: %s\n" % (e.filename, e.strerror)
@@ -392,7 +433,7 @@ class ShRuntime(object):
                     )
 
         # Get the parent thread
-        parent_thread = threading.currentThread()
+        parent_thread = threading.current_thread()
 
         # UI thread is substituted by runtime
         if not isinstance(parent_thread, ShBaseThread):
@@ -426,9 +467,11 @@ class ShRuntime(object):
         final_ins=None,
         final_outs=None,
         final_errs=None,
-        environ={},
+        environ=None,
         cwd=None,
     ):
+        if environ is None:
+            environ = {}
         if self.debug:
             self.logger.debug(str(pipe_sequence))
 
@@ -501,7 +544,10 @@ class ShRuntime(object):
                     else:
                         simple_command_args = simple_command.args
 
-                    if script_file.endswith(".py"):
+                    # check file extension or if syntax match
+                    if has_py_extension(script_file) or is_true_python_file(
+                        script_file
+                    ):
                         self.exec_py_file(
                             script_file, simple_command_args, ins, outs, errs
                         )
@@ -589,7 +635,7 @@ class ShRuntime(object):
         self.handle_PYTHONPATH()  # Make sure PYTHONPATH is honored
 
         try:
-            with io.open(file_path, "rb", newline=None) as f:
+            with open(file_path, "rb", newline=None) as f:
                 content = f.read()
                 code = compile(content, file_path, "exec", dont_inherit=True)
                 exec(code, namespace, namespace)
@@ -599,7 +645,7 @@ class ShRuntime(object):
         except SystemExit as e:
             current_state.return_value = e.code
 
-        except Exception as e:
+        except Exception:
             current_state.return_value = 1
 
             etype, evalue, tb = sys.exc_info()
@@ -610,7 +656,7 @@ class ShRuntime(object):
                 lines = traceback.format_exception(etype, evalue, tb)
                 self.write_error_message(errs, "".join(lines), prefix="")
                 if self.py_pdb:
-                    import pdb
+                    import pdb  # noqa: T100
 
                     pdb.post_mortem(tb)
 
@@ -639,7 +685,7 @@ class ShRuntime(object):
         # Enclosing variables will be merged to environ when creating new thread
         try:
             # read the file in textmode.
-            with io.open(filename, "r", newline=None) as fins:
+            with open(filename, "r", newline=None) as fins:
                 child_worker = self.run(
                     fins.readlines(),
                     final_ins=ins,
@@ -653,7 +699,7 @@ class ShRuntime(object):
 
             current_state.return_value = child_worker.state.return_value
 
-        except IOError as e:
+        except OSError as e:
             emsg = "%s: %s\n" % (e.filename, e.strerror)
             self.write_error_message(errs, emsg)
             current_state.return_value = 1
@@ -668,14 +714,9 @@ class ShRuntime(object):
         Convert an argv list into the appropiate string type depending
         on the currently used python version.
         """
-        if PY3:
-            # we need unicode argv
-            argv = [c if isinstance(c, text_type) else c.decode("utf-8") for c in argv]
-        else:
-            # we need bytestring argv
-            argv = [
-                c if isinstance(c, binary_type) else c.encode("utf-8") for c in argv
-            ]
+
+        # we need unicode argv
+        argv = [c if isinstance(c, str) else c.decode("utf-8") for c in argv]
         return argv
 
     def get_prompt(self):
@@ -719,7 +760,7 @@ class ShRuntime(object):
         worker.set_background(False)
         self.stash.mini_buffer.config_runtime_callback(None)
         self.stash.write_message(
-            "job {} is now running in foreground ...".format(worker.job_id)
+            f"job {worker.job_id} is now running in foreground ..."
         )
 
     def save_history(self):
@@ -728,7 +769,7 @@ class ShRuntime(object):
         """
         try:
             self.history.save(self.historyfile)
-        except IOError:
+        except OSError:
             pass
 
     def get_current_worker_and_state(self):
@@ -737,7 +778,7 @@ class ShRuntime(object):
         :return:
         :rtype: (ShBaseThread, ShState)
         """
-        current_worker = threading.currentThread()
+        current_worker = threading.current_thread()
         if isinstance(current_worker, ShBaseThread):
             return current_worker, current_worker.state
         else:  # UI thread uses runtime for its state

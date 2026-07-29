@@ -1,16 +1,19 @@
-# -*- coding: utf-8 -*-
 """The FSI for the local filesystem."""
 
 import os
 import shutil
 
+from mlpatches.mount_base import (
+    _org_listdir,
+    _org_mkdir,
+    _org_open,
+    _org_remove,
+    _org_stat,
+)
+
 from stashutils.core import get_stash
 from stashutils.fsi.base import BaseFSI
-from stashutils.fsi.errors import OperationFailure, IsDir, IsFile
-from stashutils.fsi.errors import AlreadyExists
-
-from mlpatches.mount_base import _org_stat, _org_listdir, _org_mkdir
-from mlpatches.mount_base import _org_open, _org_remove
+from stashutils.fsi.errors import AlreadyExists, IsDir, IsFile, OperationFailure
 
 _stash = get_stash()
 
@@ -36,11 +39,11 @@ class LocalFSI(BaseFSI):
         else:
             self.basepath = args[0]
             if not os.path.isdir(self.basepath):
-                return "No such directory: {p}".format(p=self.basepath)
+                return f"No such directory: {self.basepath}"
             return True
 
     def repr(self):
-        return "Local Directory '{bp}' [CWD: {p}]".format(p=self.path, bp=self.basepath)
+        return f"Local Directory '{self.basepath}' [CWD: {self.path}]"
 
     def listdir(self, path="."):
         ap = self._getabs(path)

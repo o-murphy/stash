@@ -24,7 +24,7 @@ def get_platform():
 
     # attempt to fall back to tkinter
     try:
-        from six.moves import tkinter
+        import tkinter
     except ImportError:
         # can not import tkinter
         # ignore this case. If this executes successfully, it is handled in the 'else' clause
@@ -51,21 +51,19 @@ def get_ui_implementation(platform=None):
     if platform is None:
         platform = get_platform()
     if platform == "pythonista":
-        from .pythonista_ui import ShUI, ShTerminal, ShSequentialRenderer
+        from .pythonista_ui import ShSequentialRenderer, ShTerminal, ShUI
 
         return (ShUI, ShSequentialRenderer)
     elif platform == "stub":
-        from .stubui import ShUI, ShTerminal, ShSequentialRenderer
+        from .stubui import ShSequentialRenderer, ShTerminal, ShUI
 
         return (ShUI, ShSequentialRenderer)
     elif platform == "tkinter":
-        from .tkui import ShUI, ShTerminal, ShSequentialRenderer
+        from .tkui import ShSequentialRenderer, ShTerminal, ShUI
 
         return (ShUI, ShSequentialRenderer)
     else:
-        raise NotImplementedError(
-            "No UI implemented for platform {}!".format(repr(platform))
-        )
+        raise NotImplementedError(f"No UI implemented for platform {platform!r}!")
 
 
 __all__ = ["get_platform", "get_ui_implementation"]

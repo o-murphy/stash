@@ -1,4 +1,3 @@
-# coding: utf-8
 """
 The proxy is to centralize handler dispatching for user actions
 such as type, touch, swipe, key press.
@@ -7,7 +6,7 @@ such as type, touch, swipe, key press.
 from contextlib import contextmanager
 
 
-class ShNullResponder(object):
+class ShNullResponder:
     def handle(self, *args, **kwargs):
         pass
 
@@ -25,7 +24,7 @@ NULL_RESPONDER = ShNullResponder()
 
 
 # noinspection PyAttributeOutsideInit,PyDocstring
-class ShUserActionProxy(object):
+class ShUserActionProxy:
     """
     This proxy object provides a central place to register handlers for
     any user actions trigger from the UI including typing, touching,
@@ -40,7 +39,7 @@ class ShUserActionProxy(object):
         self.reset()
 
         # TextView delegate
-        class _TVDelegate(object):
+        class _TVDelegate:
             @staticmethod
             def textview_did_begin_editing(sender):
                 self.tv_responder.textview_did_begin_editing(sender)
@@ -64,7 +63,7 @@ class ShUserActionProxy(object):
                 self.tv_responder.textview_did_change_selection(sender)
 
         # Virtual key row swipe gesture
-        class _SVDelegate(object):
+        class _SVDelegate:
             @staticmethod
             def scrollview_did_scroll(sender):
                 if self.sv_responder:

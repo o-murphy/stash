@@ -1,17 +1,15 @@
-# -*- coding: utf-8 -*-
 """
 The Control, Escape and Graphics are taken from pyte (https://github.com/selectel/pyte)
 """
 
-import os
-import sys
-import platform
-import functools
-import threading
+import ast
 import ctypes
+import functools
+import os
+import platform
+import sys
+import threading
 from itertools import chain
-
-import six
 
 IN_PYTHONISTA = sys.executable.find("Pythonista") >= 0
 
@@ -23,28 +21,7 @@ if IN_PYTHONISTA:
     PYTHONISTA_VERSION = _properties["CFBundleShortVersionString"]
     PYTHONISTA_VERSION_LONG = _properties["CFBundleVersion"]
 
-    if PYTHONISTA_VERSION < "3.0":
-        python_capi = ctypes.pythonapi
-    else:
-        # The default pythonapi always points to Python 3 in Pythonista 3
-        if six.PY3:
-            python_capi = ctypes.pythonapi
-        else:
-            # We need to load the Python 2 API manually
-            try:
-                python_capi = ctypes.PyDLL(
-                    os.path.join(
-                        os.path.dirname(sys.executable),
-                        "Frameworks/Py2Kit.framework/Py2Kit",
-                    )
-                )
-            except OSError:
-                python_capi = ctypes.PyDLL(
-                    os.path.join(
-                        os.path.dirname(sys.executable),
-                        "Frameworks/PythonistaKit.framework/PythonistaKit",
-                    )
-                )
+    python_capi = ctypes.pythonapi
 
 else:
     PYTHONISTA_VERSION = "0.0"
@@ -88,8 +65,6 @@ _EXTERNAL_DIRS = [
     _STASH_EXTENSION_PATCH_PATH,
 ]
 
-# Python 3 or not Python 3
-PY3 = six.PY3
 
 # Save the true IOs
 if IN_PYTHONISTA:
@@ -101,7 +76,7 @@ if IN_PYTHONISTA:
     except ImportError:
         import pykit_io
 
-        class _outputcapture(object):
+        class _outputcapture:
             ReadStdin = pykit_io.read_stdin
             CaptureStdout = pykit_io.write_stdout
             CaptureStderr = pykit_io.write_stderr
@@ -112,7 +87,7 @@ if IN_PYTHONISTA:
         _SYS_STDIN = sys.__stdin__
     else:
 
-        class StdinCatcher(object):
+        class StdinCatcher:
             def __init__(self):
                 self.encoding = "utf8"
 
@@ -130,7 +105,7 @@ if IN_PYTHONISTA:
         _SYS_STDOUT = sys.__stdout__
     else:
 
-        class StdoutCatcher(object):
+        class StdoutCatcher:
             def __init__(self):
                 self.encoding = "utf8"
 
@@ -140,7 +115,7 @@ if IN_PYTHONISTA:
             def write(self, s):
                 if isinstance(s, str):
                     _outputcapture.CaptureStdout(s)
-                elif isinstance(s, six.text_type):
+                elif isinstance(s, str):
                     _outputcapture.CaptureStdout(s.encode("utf8"))
 
             def writelines(self, lines):
@@ -154,7 +129,7 @@ if IN_PYTHONISTA:
         _SYS_STDERR = sys.__stderr__
     else:
 
-        class StderrCatcher(object):
+        class StderrCatcher:
             def __init__(self):
                 self.encoding = "utf8"
 
@@ -164,7 +139,7 @@ if IN_PYTHONISTA:
             def write(self, s):
                 if isinstance(s, str):
                     _outputcapture.CaptureStderr(s)
-                elif isinstance(s, six.text_type):
+                elif isinstance(s, str):
                     _outputcapture.CaptureStderr(s.encode("utf8"))
 
             def writelines(self, lines):
@@ -180,6 +155,21 @@ _SYS_PATH = sys.path
 _OS_ENVIRON = os.environ
 
 
+def is_true_python_file(filename):
+    try:
+        with open(filename, "r", encoding="utf-8") as fp:
+            ast.parse(fp.read(), filename)
+            return True
+    except SyntaxError:
+        return False
+    except Exception:
+        return False
+
+
+def has_py_extension(filename):
+    return filename.endswith(".py")
+
+
 def is_binary_file(filename, nbytes=1024):
     """
     An approximate way to tell whether a file is binary.
@@ -189,14 +179,13 @@ def is_binary_file(filename, nbytes=1024):
     """
     with open(filename, "rb") as ins:
         for c in ins.read(nbytes):
-            if isinstance(c, six.integer_types):
+            if isinstance(c, int):
                 oc = c
             else:
                 oc = ord(c)
             if 127 < oc < 256 or (oc < 32 and oc not in (9, 10, 13)):
                 return True
-        else:
-            return False
+        return False
 
 
 def sh_delay(func, nseconds):
@@ -228,7 +217,7 @@ class ShIsDirectory(Exception):
 
 class ShNotExecutable(Exception):
     def __init__(self, filename):
-        super(Exception, self).__init__("{}: not executable\n".format(filename))
+        super(Exception, self).__init__(f"{filename}: not executable\n")
 
 
 class ShSingleExpansionRequired(Exception):
@@ -251,7 +240,7 @@ class ShInternalError(Exception):
     pass
 
 
-class Control(object):
+class Control:
     """
     pyte.control
     ~~~~~~~~~~~~
@@ -315,7 +304,7 @@ class Control(object):
     CSI = "\u009b"
 
 
-class Escape(object):
+class Escape:
     """
     pyte.escape
     ~~~~~~~~~~~
@@ -473,8 +462,7 @@ class Escape(object):
     HPA = "'"
 
 
-class Graphics(object):
-    # -*- coding: utf-8 -*-
+class Graphics:
     """
     pyte.graphics
     ~~~~~~~~~~~~~
