@@ -1,12 +1,10 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 # Example of accessing the shell object from script
 # This ability completely removes the need of plugins
 """List or define shell aliases."""
 
-from __future__ import print_function
-
-import sys
 import argparse
+import sys
 
 
 def main(args):
@@ -22,7 +20,7 @@ def main(args):
 
     if ns.expr is None:
         for k, v in current_state.aliases.items():
-            print("{}={}".format(k, v[0]))
+            print(f"{k}={v[0]}")
 
     else:
         if "=" in ns.expr:
@@ -38,9 +36,9 @@ def main(args):
             sys.exit(0)
         else:
             try:
-                print("{}={}".format(ns.expr, current_state.aliases[ns.expr]))
+                print(f"{ns.expr}={current_state.aliases[ns.expr]}")
             except KeyError as err:
-                raise KeyError("alias: {} not found".format(err.message))
+                raise KeyError(f"alias: {err} not found")
 
 
 if __name__ == "__main__":
