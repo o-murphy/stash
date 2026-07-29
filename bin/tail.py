@@ -1,12 +1,10 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """Print the last 10 lines of the given files."""
 
-from __future__ import print_function
-
 import argparse
-import time
-import sys
 import fileinput
+import sys
+import time
 
 
 def tail_f(f, wait_sec):
