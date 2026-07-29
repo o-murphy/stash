@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """
 Secure Copy - Copy files between local and remote
 
@@ -17,19 +17,14 @@ https://github.com/jbardin/scp.py
 Utilities for sending files over ssh using the scp1 protocol.
 """
 
-from __future__ import print_function
-
 import argparse
 import locale
 import os
 import re
 import sys
-from distutils.version import StrictVersion
-from socket import timeout as SocketTimeout
-
-from six.moves import input
 
 import paramiko
+from packaging.version import Version
 
 __version__ = "0.8.0"
 
@@ -38,20 +33,20 @@ def install_module_from_github(username, package_name, version):
     """
     Install python module from github zip files
     """
-    cmd_string = """
-        echo Installing {1} {2} ...
-        wget https://github.com/{0}/{1}/archive/{2}.zip -o $TMPDIR/{1}.zip
-        mkdir $TMPDIR/{1}_src
-        unzip $TMPDIR/{1}.zip -d $TMPDIR/{1}_src
-        rm -f $TMPDIR/{1}.zip
-        mv $TMPDIR/{1}_src/{1} $STASH_ROOT/lib/
-        rm -rf $TMPDIR/{1}_src
+    cmd_string = f"""
+        echo Installing {package_name} {version} ...
+        wget https://github.com/{username}/{package_name}/archive/{version}.zip -o $TMPDIR/{package_name}.zip
+        mkdir $TMPDIR/{package_name}_src
+        unzip $TMPDIR/{package_name}.zip -d $TMPDIR/{package_name}_src
+        rm -f $TMPDIR/{package_name}.zip
+        mv $TMPDIR/{package_name}_src/{package_name} $STASH_ROOT/lib/
+        rm -rf $TMPDIR/{package_name}_src
         echo Done
-        """.format(username, package_name, version)
+        """
     globals()["_stash"](cmd_string)
 
 
-if StrictVersion(paramiko.__version__) < StrictVersion("1.15"):
+if Version(paramiko.__version__) < Version("1.15"):
     # Install paramiko 1.16.0 to fix a bug with version < 1.15
     install_module_from_github("paramiko", "paramiko", "v1.16.0")
     print("Please restart Pythonista for changes to take full effect")
@@ -117,7 +112,7 @@ def asunicode_win(s):
         return s
 
 
-class SCPClient(object):
+class SCPClient:
     """
     An scp1 implementation, compatible with openssh scp.
     Raises SCPException for all transport related errors. Local filesystem
@@ -323,7 +318,7 @@ class SCPClient(object):
                 self._send_popd()
 
     def _send_pushd(self, directory):
-        (mode, size, mtime, atime) = self._read_stats(directory)
+        (mode, _size, mtime, atime) = self._read_stats(directory)
         basename = asbytes(os.path.basename(directory))
         if self.preserve_times:
             self._send_time(mtime, atime)
@@ -345,7 +340,7 @@ class SCPClient(object):
         msg = b""
         try:
             msg = self.channel.recv(512)
-        except SocketTimeout:
+        except TimeoutError:
             raise SCPException("Timout waiting for scp response")
         # slice off the first byte, so this compare will work in python2 and python3
         if msg and msg[0:1] == b"\x00":
@@ -418,7 +413,7 @@ class SCPClient(object):
 
         try:
             file_hdl = open(path, "wb")
-        except IOError as e:
+        except OSError as e:
             chan.send(b"\x01" + str(e).encode("utf-8"))
             chan.close()
             raise
@@ -435,8 +430,7 @@ class SCPClient(object):
         try:
             while pos < size:
                 # we have to make sure we don't read the final byte
-                if size - pos <= buff_size:
-                    buff_size = size - pos
+                buff_size = min(size - pos, buff_size)
                 file_hdl.write(chan.recv(buff_size))
                 pos = file_hdl.tell()
                 if self._progress:
@@ -445,7 +439,7 @@ class SCPClient(object):
             msg = chan.recv(512)
             if msg and msg[0:1] != b"\x00":
                 raise SCPException(msg[1:])
-        except SocketTimeout:
+        except TimeoutError:
             chan.close()
             raise SCPException("Error receiving, socket.timeout")
 
@@ -502,8 +496,6 @@ class SCPClient(object):
 
 class SCPException(Exception):
     """SCP exception class"""
-
-    pass
 
 
 ############################################
