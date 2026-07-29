@@ -2,9 +2,9 @@ name: Check code and run tests
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
   workflow_dispatch:
 
 jobs:
@@ -17,31 +17,39 @@ jobs:
           python-version: 3.x
       - uses: pre-commit/action@v3.0.1
 
+  ruff:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - run: pip install --user ruff
+      - run: ruff check --output-format=github .
+      - run: ruff format
   build:
     runs-on: macos-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.13"]
+        python-version: ["3.10", "3.14"]
     steps:
-    - name: Checkout
-      uses: actions/checkout@v7
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v7
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip wheel setuptools
-        pip install ".[testing]"
-    - name: Analysing the code with flake8
-      run: |
-        # F824 `global name` / `nonlocal name` is unused: name is never assigned in scope
-        flake8 . --count --select=E9,F63,F7,F82 --ignore=F824 --show-source --statistics
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
-    - name: Running tests
-      run: |
-        pytest --version
-        # make install test work...
-        export PYTHONPATH=$(python -m site --user-site)
-        pytest tests/ --ignore=tests/system/data/ --ignore=tests/pip/test_pip.py --showlocals --verbose --show-capture=all --log-level=debug
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip wheel setuptools
+          pip install ".[testing]"
+      - name: Analysing the code with flake8
+        run: |
+          # F824 `global name` / `nonlocal name` is unused: name is never assigned in scope
+          flake8 . --count --select=E9,F63,F7,F82 --ignore=F824 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=88 --statistics
+      - name: Running tests
+        run: |
+          pytest --version
+          # make install test work...
+          export PYTHONPATH=$(python -m site --user-site)
+          pytest
