@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """
 sqlite3 shell modeled after sqlite3 command-line.
 Created by: Chris Houser (Briarfox)
@@ -7,10 +7,9 @@ Use sqlite ?file? to open a database in the shell.
 You can pass params to run one command. ex. sqlite test.db .dump > test.sql
 """
 
-from __future__ import print_function
-import sqlite3
-import os
 import cmd
+import os
+import sqlite3
 import sys
 
 
@@ -111,9 +110,8 @@ class SqliteCMD(cmd.Cmd):
     def do_backup(self, line):
         """.backup ?DB? FILE
         Backup DB (default "main") to FILE"""
-        with open(self.detabase, "rb") as f:
-            with open(line, "wb") as new_db:
-                new_db.write(f.read())
+        with open(self.detabase, "rb") as f, open(line, "wb") as new_db:
+            new_db.write(f.read())
 
     def do_clone(self, line):
         """.clone NEWDB
@@ -143,11 +141,10 @@ class SqliteCMD(cmd.Cmd):
         """.read FILENAME
         Execute SQL in FILENAME
         """
-        if line:
-            if os.path.isfile(line):
-                with open(line, "r") as f:
-                    self.cur.executescript(f.read())
-                    self.conn.commit()
+        if line and os.path.isfile(line):
+            with open(line, "r") as f:
+                self.cur.executescript(f.read())
+                self.conn.commit()
 
     def do_schema(self, line):
         """.schema ?TABLE?
