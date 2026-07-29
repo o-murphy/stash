@@ -1,33 +1,36 @@
-# coding: utf-8
+#!/usr/bin/env python
 """
 Simple telent client.
 
 usage: telnet host [-p port] [--timeout N]
 """
 
-from __future__ import print_function
-import sys
-import select
 import argparse
-import telnetlib
+import select
+import sys
 import threading
+
+_stash = globals()["_stash"]
+
+try:
+    # FIXME: should be reimplemented with telnetlib3 or Exscript and asyncio
+    import telnetlib
+except ImportError:
+    _stash("pip install standard-telnetlib")
+    import telnetlib
 
 from stash.system.shcommon import (
     K_CC,
     K_CD,
-    K_HUP,
-    K_HDN,
     K_CU,
-    K_TAB,
-    K_HIST,
     K_CZ,
+    K_HDN,
+    K_HUP,
     K_KB,
+    K_TAB,
 )
 
 _SYS_STDOUT = sys.__stdout__
-
-_stash = globals()["_stash"]
-""":type : StaSh"""
 
 try:
     import pyte
@@ -36,7 +39,7 @@ except ImportError:
     import pyte
 
 
-class StashTelnet(object):
+class StashTelnet:
     """
     Wrapper class for telnet client and pyte screen
     """
@@ -62,7 +65,7 @@ class StashTelnet(object):
         while self.running:
             # Get the list sockets which are readable
             try:
-                read_sockets, write_sockets, error_sockets = select.select(
+                read_sockets, _write_sockets, _error_sockets = select.select(
                     [self.client], [], []
                 )
             except:
@@ -104,7 +107,7 @@ class StashTelnet(object):
 CTRL_KEY_FLAG = 1 << 18
 
 
-class SshUserActionDelegate(object):
+class SshUserActionDelegate:
     """
     Substitute the default user actions delegates
     """
