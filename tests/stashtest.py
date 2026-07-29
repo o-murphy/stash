@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
 """utility StaSh testcase for common methids"""
 
+import logging
 import os
 import sys
-import unittest
-import logging
 import tempfile
+import unittest
 
 try:
     from StringIO import StringIO
@@ -15,8 +14,7 @@ except ImportError:
 import requests
 
 from stash import stash
-from stash.system.shcommon import _STASH_ROOT, PY3
-
+from stash.system.shcommon import _STASH_ROOT
 
 ON_TRAVIS = "TRAVIS" in os.environ
 
@@ -66,10 +64,7 @@ def expected_failure_on_py3(f):
     :return: decorated function
     :rtype: callable
     """
-    if PY3:
-        return unittest.expectedFailure(f)
-    else:
-        return f
+    return unittest.expectedFailure(f)
 
 
 class StashTestCase(unittest.TestCase):
@@ -134,7 +129,7 @@ class StashTestCase(unittest.TestCase):
         exitcode=None,
     ):
         saved_cwd = os.getcwd()
-        self.logger.info("executing {c} in {d}...".format(c=cmd, d=saved_cwd))
+        self.logger.info(f"executing {cmd} in {saved_cwd}...")
         # 1 for mimicking running from console
         worker = self.stash(cmd, persistent_level=1)
 
@@ -150,20 +145,16 @@ class StashTestCase(unittest.TestCase):
         else:
             if os.getcwd() != saved_cwd:
                 self.logger.warning(
-                    "CWD changed from '{o}' to '{n}'!".format(
-                        o=saved_cwd, n=os.getcwd()
-                    )
+                    f"CWD changed from '{saved_cwd}' to '{os.getcwd()}'!"
                 )
 
         for v in ensure_undefined:
-            assert v not in self.stash.runtime.state.environ.keys(), (
+            assert v not in self.stash.runtime.state.environ, (
                 "%s should be undefined" % v
             )
 
         for v in ensure_defined:
-            assert v in self.stash.runtime.state.environ.keys(), (
-                "%s should be defined" % v
-            )
+            assert v in self.stash.runtime.state.environ, "%s should be defined" % v
 
     def run_command(self, command, exitcode=None):
         """
@@ -196,8 +187,6 @@ class StashTestCase(unittest.TestCase):
             self.assertEqual(
                 returnvalue,
                 exitcode,
-                "unexpected exitcode ({e} expected, got {g})\nOutput:\n{o}\n".format(
-                    e=exitcode, g=returnvalue, o=output
-                ),
+                f"unexpected exitcode ({exitcode} expected, got {returnvalue})\nOutput:\n{output}\n",
             )
         return output

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 This tool will uninstall StaSh from pythonista and then download&run getstash.py
 """
@@ -8,7 +7,6 @@ import shutil
 import tempfile
 
 import requests
-import six
 
 
 def get_stash_dir():
@@ -37,7 +35,7 @@ def parse_gh_target(s):
 
 
 def main():
-    ts = six.moves.input("New target (repo:branch, empty for default): ")
+    ts = input("New target (repo:branch, empty for default): ")
     t = parse_gh_target(ts)
     if os.path.exists(get_stash_dir()):
         remove_stash()

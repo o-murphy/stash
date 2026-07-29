@@ -3,7 +3,6 @@ tests for the tkui
 """
 
 import logging
-
 from unittest import skipIf
 
 from stash.tests.stashtest import StashTestCase
@@ -54,8 +53,7 @@ class TkTerminalTests(StashTestCase):
             "9.2": (8, 2),
         }
         terminal = self.tc()
-        for tki in values:
-            expected = values[tki]
+        for tki, expected in values.items():
             converted = terminal._tk_index_to_tuple(tki)
             self.assertEqual(converted, expected)
             # convert back
@@ -84,8 +82,7 @@ class TkTerminalTests(StashTestCase):
             10: (2, 1),
         }
         terminal = self.tc(s)
-        for rel in values:
-            expected = values[rel]
+        for rel, expected in values.items():
             ab = terminal._rel_cursor_pos_to_abs_pos(rel)
             self.assertEqual(ab, expected)
             # convert back
