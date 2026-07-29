@@ -1,11 +1,9 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """Sort standard input or given files to standard output"""
 
-from __future__ import print_function
-import os
-import sys
-import fileinput
 import argparse
+import fileinput
+import sys
 
 
 def main(args):
