@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 """tests for the 'cat' command."""
 
 import os
-from unittest import expectedFailure
 
 from stash.tests.stashtest import StashTestCase
 
