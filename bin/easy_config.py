@@ -1,18 +1,13 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """a graphical config manager for StaSh"""
 
 import ast
 import os
 import threading
 
-from six import string_types
-
 import console
-import ui
 import dialogs
-
-import pythonista_add_action as paa
-
+import ui
 from stash.system.shcommon import _STASH_CONFIG_FILES, _STASH_HISTORY_FILE
 
 _stash = globals()["_stash"]
@@ -74,14 +69,7 @@ def add_editor_action():
     mv = cfg_view  # [global] the main view
     mv.ai.start()
     try:
-        lsp = "/launch_stash.py"  # TODO: auto-detect
-        paa.add_action(
-            lsp,
-            "monitor",
-            "000000",
-            "StaSh",
-        )
-        paa.save_defaults()
+        _stash("pinstash -f")
     finally:
         mv.ai.stop()
 
@@ -307,7 +295,7 @@ SECTIONS = [
 ]
 
 
-class RGBColorPicker(object):
+class RGBColorPicker:
     """
     This object will prompt the user for a color.
     Parts of this are copied from the pythonista examples.
@@ -586,7 +574,10 @@ class ConfigView(ui.View):
             fn = fp.replace(os.path.dirname(fp), "", 1)
             b.title = fn
             i = (sn, info["option_name"])
-            callback = lambda s, self=self, i=i, f=fp: self.choose_file(s, i, f)
+
+            def callback(s, self_=self, i_=i, f_=fp):
+                return self.choose_file(s, i_, f_)
+
             b.action = callback
             cell.content_view.add_subview(b)
             b.width = cell.width / 6.0
@@ -598,11 +589,14 @@ class ConfigView(ui.View):
             b = ui.Button()
             b.title = info["display_name"]
             cmd = info["command"]
-            if isinstance(cmd, string_types):
+            if isinstance(cmd, str):
                 f = lambda c=cmd: _stash(c, add_to_history=False)
             else:
                 f = lambda c=cmd: cmd()
-            callback = lambda s, self=self, f=f: self.run_func(f)
+
+            def callback(s, self=self, f=f):
+                return self.run_func(f)
+
             b.action = callback
             cell.content_view.add_subview(b)
             b.flex = "WH"
@@ -697,7 +691,7 @@ class ConfigView(ui.View):
     def choose_color(self, b, name):
         """called when the user wants to change a color."""
         section, option = name
-        cur = b.background_color[:3]
+        _cur = b.background_color[:3]
         self.subview_open = True
         name = dialogs.list_dialog("Choose a color", COLORS, multiple=False)
         self.subview_open = False
