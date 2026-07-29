@@ -1,12 +1,9 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """Download a file from a url."""
 
-from __future__ import print_function
-
-import sys
 import argparse
-
-from six.moves.urllib.request import urlopen
+import sys
+from urllib.request import urlopen
 
 try:
     import console
@@ -56,14 +53,11 @@ def main(args):
 
         meta = u.info()
         try:
-            if _stash.PY3:
-                file_size = int(meta["Content-Length"])
-            else:
-                file_size = int(meta.getheaders("Content-Length")[0])
+            file_size = int(meta["Content-Length"])
         except (IndexError, ValueError, TypeError):
             file_size = 0
 
-        print("Save as: {} ".format(output_file), end="")
+        print(f"Save as: {output_file} ", end="")
         print("({} bytes)".format(file_size if file_size else "???"))
 
         with open(output_file, "wb") as f:
@@ -77,10 +71,10 @@ def main(args):
                 f.write(buf)
                 status = get_status_string(file_size_dl, file_size)
                 print("\r" + status + " " * 10, end="")
-            print("")
+            print()
 
     except Exception as e:
-        print("Invalid url: %s" % url)
+        print(f"Invalid url: {url}: {e}")
         sys.exit(1)
 
     finally:
