@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """Clear the stash console output window"""
-
-from __future__ import print_function
 
 print("\u009bc", end="")
