@@ -1,12 +1,10 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """Exit the current subshell, optionally with a specific status. If no
 status is given, the default of 0 is used, indicating successful
 execution with no errors.
 """
 
 import argparse
-import os
 import sys
 
 
