@@ -1,14 +1,12 @@
-#! python2
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 # StaSh utility - Dutcho, 16-17 Apr 2017
 """Display output one screen page at a time (optionally with numbered lines)"""
 
-from __future__ import print_function
-
 import argparse
-import console
 import fileinput
 import sys
+
+import console
 
 
 def msi(chars):
@@ -95,7 +93,7 @@ def main(args):
     ns.line = True
     fmt = " ".join(
         "{" + var + "}"
-        for var in "pageno lineno filename filelineno line".split()
+        for var in ["pageno", "lineno", "filename", "filelineno", "line"]
         if getattr(ns, var)
     )
     more(ns.file, ns.pagesize, ns.clear, fmt)
