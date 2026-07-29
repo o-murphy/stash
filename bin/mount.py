@@ -1,18 +1,20 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """mount a filesystem."""
-
-from __future__ import print_function
 
 import argparse
 import sys
 
-from six import string_types
-from six.moves import input
+_stash = globals()["_stash"]
+
+try:
+    #: FIXME: temporary solution
+    import dropbox
+except ImportError:
+    print("Installing Required packages...")
+    _stash("pip install dropbox>=10.10.0")
 
 from stashutils import mount_ctrl, mount_manager
 from stashutils.fsi.interfaces import FILESYSTEM_TYPES
-
-_stash = globals()["_stash"]
 
 
 def list_mounts():
@@ -24,7 +26,7 @@ def list_mounts():
 
     mounts = manager.get_mounts()
     for p, fsi, readonly in mounts:
-        print("{f} on {p}".format(f=fsi.repr(), p=p))
+        print(f"{fsi.repr()} on {p}")
 
 
 if __name__ == "__main__":
@@ -133,24 +135,20 @@ if __name__ == "__main__":
     if ns.v:
         print("Connecting FSI...")
     msg = fsi.connect(*tuple(ns.options))
-    if isinstance(msg, string_types):
-        print(_stash.text_color("Error: {m}".format(m=msg), "red"))
+    if isinstance(msg, str):
+        print(_stash.text_color(f"Error: {msg}", "red"))
         sys.exit(1)
     if ns.do_mount:
         try:
             manager.mount_fsi(ns.dir, fsi, readonly=ns.readonly)
         except mount_manager.MountError as e:
-            print(_stash.text_color("Error: {e}".format(e=e.message), "red"))
+            print(_stash.text_color(f"Error: {e.message}", "red"))
             try:
                 if ns.v:
                     print("unmounting FSI...")
                 fsi.close()
             except Exception as e:
-                print(
-                    _stash.text_color(
-                        "Error unmounting FSI: {e}".format(e=e.message), "red"
-                    )
-                )
+                print(_stash.text_color(f"Error unmounting FSI: {e.message}", "red"))
             else:
                 if ns.v:
                     print("Finished cleanup.")
