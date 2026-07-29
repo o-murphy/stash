@@ -1,12 +1,11 @@
-# coding=utf-8
+#!/usr/bin/env python
 """Transfer a URL"""
 
-from __future__ import print_function
-import sys
 import argparse
-import requests
+import sys
+from urllib.parse import urlparse
 
-from six.moves.urllib.parse import urlparse
+import requests
 
 try:
     import clipboard
@@ -60,7 +59,7 @@ def main(args):
     elif ns.request_method == "HEAD":
         r = requests.head(url, headers=headers, allow_redirects=ns.location)
     else:
-        print("unknown request method: {}".format(ns.request_method))
+        print(f"unknown request method: {ns.request_method}")
         return
 
     if ns.output_file:
