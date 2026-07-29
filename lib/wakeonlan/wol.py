@@ -1,11 +1,7 @@
-# -*- encoding: utf-8 -*-
 """
 Small module for use with the wake on lan protocol.
 
 """
-
-from __future__ import absolute_import
-from __future__ import unicode_literals
 
 import socket
 import struct
@@ -59,9 +55,7 @@ def send_magic_packet(*macs, **kwargs):
     ip = kwargs.pop("ip_address", BROADCAST_IP)
     port = kwargs.pop("port", DEFAULT_PORT)
     for k in kwargs:
-        raise TypeError(
-            "send_magic_packet() got an unexpected keyword argument {!r}".format(k)
-        )
+        raise TypeError(f"send_magic_packet() got an unexpected keyword argument {k!r}")
 
     for mac in macs:
         packet = create_magic_packet(mac)

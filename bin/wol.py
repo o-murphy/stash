@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- encoding: utf-8 -*-
 # Based on https://github.com/remcohaszing/pywakeonlan as of 2015-08-13
 # Adapted and extended by Georg Viehoever, 2015-08-13
 #
@@ -34,12 +33,8 @@ optional arguments:
   -p port        The port of the host to send the magic packet to (default 9)
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-
-import sys
-import os
 import os.path
+import sys
 
 if sys.platform == "win32":
     # for tests on Windows
@@ -48,6 +43,7 @@ if sys.platform == "win32":
     sys.path.remove(os.getcwd())
 
 import argparse
+
 from wakeonlan import wol
 
 parser = argparse.ArgumentParser(
@@ -65,9 +61,7 @@ parser.add_argument(
     "-i",
     metavar="ip",
     default=wol.BROADCAST_IP,
-    help="The ip address of the host to send the magic packet to. (default {})".format(
-        wol.BROADCAST_IP
-    ),
+    help=f"The ip address of the host to send the magic packet to. (default {wol.BROADCAST_IP})",
 )
 parser.add_argument(
     "-p",
