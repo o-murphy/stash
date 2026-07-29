@@ -1,17 +1,13 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """Open file in Quick Look."""
-
-from __future__ import print_function
 
 import argparse
 import sys
 
-
 _stash = globals()["_stash"]
 
 
-class ConsoleQuicklook(object):
+class ConsoleQuicklook:
     def __init__(self, args):
         p = argparse.ArgumentParser(description=__doc__)
         p.add_argument("file", action="store", help="file to open")
