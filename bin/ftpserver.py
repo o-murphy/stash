@@ -1,13 +1,12 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """Simple FTP Server"""
 
-from __future__ import print_function
 import argparse
+import logging
 import os
 import sys
 import threading
 import time
-import logging
 
 _stash = globals()["_stash"]
 
@@ -22,8 +21,8 @@ except ImportError:
         sys.exit(1)
 
 from pyftpdlib.authorizers import DummyAuthorizer
-from pyftpdlib.servers import FTPServer
 from pyftpdlib.handlers import FTPHandler
+from pyftpdlib.servers import FTPServer
 
 
 def run(ns):
@@ -35,7 +34,7 @@ def run(ns):
         auth.add_anonymous(ns.path, perm=ns.perm)
     handler = FTPHandler
     handler.authorizer = auth
-    handler.banner = "StaSh v{v} FTP-Server".format(v=_stash.__version__)
+    handler.banner = f"StaSh v{_stash.__version__} FTP-Server"
     address = ("0.0.0.0", ns.port)
     server = FTPServer(address, handler)
     server.max_cons = 128
@@ -48,7 +47,7 @@ def run(ns):
     thr = threading.Thread(name="FTP-Server Thread", target=server.serve_forever)
     thr.daemon = True
     thr.start()
-    print("FTP-Server started on {h}:{p}".format(h=address[0], p=str(address[1])))
+    print(f"FTP-Server started on {address[0]}:{address[1]!s}")
     try:
         while True:
             time.sleep(0.2)
