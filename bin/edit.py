@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """
 Used to create/open and edit files.
 [-t --temp] - Opens the file as a temporary file. Allowing editing and renaming. Previous script in the pythonista editor will be restored unless a new tab is edited.
@@ -9,20 +9,17 @@ usage:
     Follow prompt for instructions.
 """
 
-from __future__ import print_function
+import argparse
 import os
 import tempfile
+import time
+
 import console
 import editor
-import time
-import argparse
 
 _stash = globals()["_stash"]
 
-try:
-    raw_input
-except NameError:
-    raw_input = input
+raw_input = input
 
 
 def open_temp(file="", new_tab=True):
@@ -64,9 +61,8 @@ def open_temp(file="", new_tab=True):
 
             if not new_tab:
                 editor.open_file(cur_path)  # restore previous script in editor
-            with open(save_as, "w") as f:
-                with open(temp.name, "r") as tmp:
-                    f.write(tmp.read())
+            with open(save_as, "w") as f, open(temp.name, "r") as tmp:
+                f.write(tmp.read())
 
             print("File Saved.")
         elif input == "N" or input == "n":
