@@ -22,9 +22,7 @@ def main(args):
         prev_line = None
         lines = None
 
-        with fileinput.input(
-            files=ns.files, openhook=fileinput.hook_encoded("utf-8")
-        ) as fin:
+        with fileinput.input(files=ns.files, encoding="utf-8") as fin:
             for line in fin:
                 if fileinput.isfirstline():
                     _print(lines)

@@ -23,12 +23,7 @@ def main(args):
     fileinput.close()  # in case it is not closed
     try:
         _stash.libdist.clipboard_set(
-            "".join(
-                line
-                for line in fileinput.input(
-                    ns.file, openhook=fileinput.hook_encoded("utf-8")
-                )
-            )
+            "".join(line for line in fileinput.input(ns.file, encoding="utf-8"))
         )
     except Exception as err:
         print(

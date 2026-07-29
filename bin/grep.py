@@ -40,7 +40,7 @@ def main(args):
     fileinput.close()  # in case it is not closed
     try:
         counts = collections.defaultdict(int)
-        for line in fileinput.input(files, openhook=fileinput.hook_encoded("utf-8")):
+        for line in fileinput.input(files, encoding="utf-8"):
             if bool(pattern.search(line)) != ns.invert:
                 if ns.count:
                     counts[fileinput.filename()] += 1
