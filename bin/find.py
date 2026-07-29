@@ -1,17 +1,15 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """Find files in specified paths"""
 
-from __future__ import print_function
-
+import argparse
+import fnmatch
 import os
 import sys
-import argparse
 import time
-import fnmatch
 from functools import partial
 
 
-class FilePredicate(object):
+class FilePredicate:
     def __init__(self):
         self.funclist = []
 
