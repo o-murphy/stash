@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """
 List all jobs that are currently running.
 """
 
-from __future__ import print_function
-import sys
 import argparse
+import sys
 import threading
 
 
