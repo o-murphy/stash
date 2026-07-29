@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 """
 Get sha256 hash of a file or string.
 
@@ -16,20 +16,16 @@ optional arguments:
                etc.
 """
 
-from __future__ import print_function
-
 import argparse
+import hashlib
 import os
 import re
 import sys
-
-import six
-
-from Crypto.Hash import SHA256
+from io import BytesIO
 
 
 def get_hash(fileobj):
-    h = SHA256.new()
+    h = hashlib.sha256()
     chunk_size = 8192
     while True:
         chunk = fileobj.read(chunk_size)
@@ -57,8 +53,8 @@ def check_list(fileobj):
 
 
 def make_file(txt):
-    f = six.BytesIO()
-    if isinstance(txt, six.binary_type):
+    f = BytesIO()
+    if isinstance(txt, (bytes, bytearray)):
         f.write(txt)
     else:
         f.write(txt.encode("utf-8"))
